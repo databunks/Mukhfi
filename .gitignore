@@ -1,0 +1,4 @@
+*/lib/*
+*/bin/*
+.vscode
+MongoDBCredentials.txt
