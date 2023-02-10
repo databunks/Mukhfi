@@ -1,5 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++17
+CLIENTPATH = client/
 SERVERPATH = server/
 
 
@@ -11,7 +12,12 @@ CPP_LOCAL_LIB_PATH = /usr/local/lib
 
 ${SERVERPATH}lib/%.o: ${SERVERPATH}src/%.cpp
 	$(CXX) -c  $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -I${SERVERPATH}include/  
-	
+
+${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
+	$(CXX) -c $< -o $@ ${CXXFLAGS} -L${CPP_LOCAL_LIB_PATH} -I${CLIENTPATH}include/
+
+simpleClient: ${CLIENTPATH}lib/simpleClient.o
+	$(CXX) ${CLIENTPATH}lib/simpleClient.o -o ${CLIENTPATH}bin/simpleClientOutput
 
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o ${SERVERPATH}bin/serverOutput 

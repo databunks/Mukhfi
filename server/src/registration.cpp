@@ -3,6 +3,12 @@
 #include <vector>
 #include <string>
 
+#define ASIO_STANDALONE
+#include <asio.hpp>
+#include <asio/ts/buffer.hpp>
+#include <asio/ts/internet.hpp>
+
+
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
@@ -34,13 +40,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    std::string username {argv[1]};
-    std::string password {argv[2]}; 
-    std::string cluster {argv[3]};
+    std::string username { argv[1] };
+    std::string password { argv[2] }; 
+    std::string cluster { argv[3] } ;
 
-    std::string uriString = std::string("mongodb+srv://") + username + std::string(":") + password + std::string("@") + cluster + std::string(".xlmttbn.mongodb.net/?retryWrites=true&w=majority");
+    std::string uriString = std::string( "mongodb+srv://" ) + username + std::string(":") + password + std::string( "@" ) + cluster + std::string( ".xlmttbn.mongodb.net/?retryWrites=true&w=majority" );
     
-    mongocxx::client client{mongocxx::uri{uriString.c_str()}};
+    mongocxx::client client{ mongocxx::uri{ uriString.c_str()} } ;
 
     mongocxx::database db = client[cluster];
 
