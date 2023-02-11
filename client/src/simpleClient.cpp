@@ -1,10 +1,21 @@
 #include <iostream>
-#include "../../server/include/net_common.h"
-#include "../../server/include/net_message.h"
+#include <olc_net.h>
 
 enum class CustomMsgTypes : uint32_t
 {
     DirectMessage
+};
+
+class CustomClient : public olc::net::client_interface<CustomMsgTypes>
+{
+    public:
+        bool SayWagWan(char* wagwan)
+        {
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = CustomMsgTypes::DirectMessage;
+            msg << wagwan;
+            Send(msg);
+        }
 };
 
 int main()
