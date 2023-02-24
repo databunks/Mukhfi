@@ -64,24 +64,25 @@ namespace olc
                             if (!ec)
                             {
                                 std::cout << "[SERVER] New Connection " << socket.remote_endpoint() << "\n";
-                                std::shared_ptr<connection<T>> newConn =  
-                                    std::make_shared<connection<T>>(connection<T>::owner::server, 
-                                    m_asioContext, std::move(socket), m_qMessagesIn);
 
-                                // Give the user server a chance to deny the connection
-                                if (OnClientConnect(newconn))
-                                {
-                                    // Connection allowed, so add to container of new connections
-                                    m_deqConnections.push_back(std::move(newconn));
+                                // std::shared_ptr<connection<T>> newConn =  
+                                //     std::make_shared<connection<T>>(connection<T>::owner::server, 
+                                //     m_asioContext, std::move(socket), m_qMessagesIn);
 
-                                    m_deqConnections.back()->ConnectToClient(nIDCounter++);
+                                // // Give the user server a chance to deny the connection
+                                // if (OnClientConnect(newconn))
+                                // {
+                                //     // Connection allowed, so add to container of new connections
+                                //     m_deqConnections.push_back(std::move(newconn));
 
-                                    std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
-                                }
-                                else
-                                {
-                                    std::cout << "[-----] Connection Denied\n";
-                                }
+                                //     m_deqConnections.back()->ConnectToClient(nIDCounter++);
+
+                                //     std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
+                                // }
+                                // else
+                                // {
+                                //     std::cout << "[-----] Connection Denied\n";
+                                // }
                             }
                             else
                             {
@@ -120,9 +121,11 @@ namespace olc
                 // Send message to all clients
                 void MessageAllClients(const message<T>& msg, std::shared_ptr<connection<T>> pIgnoreClient = nullptr)
                 {
+                    bool bInvalidClientExists = false;
+
                     for (auto& client : m_deqConnections)
                     {
-
+                        // Check if client is connected
                         if (client && client->IsConnected())
                         {
                             if (client != pIgnoreClient)
@@ -130,11 +133,38 @@ namespace olc
                                 client->Send(msg);
                             }
                         }
+                        else
+                        {
+                            // The client cant be connected so assume its disconnected
+                            OnClientDisconnect(client);
+                            client.reset();
+                            bInvaldClientExists = true;
+                        }
+                    }
+
+                    if (bInvalidClientExists)
+                    {
+                        m_deqConnections.erase(std::remove(m_deqConnections.begin(), m_deqConnections.end(), nullptr), m_deqConnections.end())
+                    }
+                }
+
+                // since size_t is an unsigned integer setting it to -1 sets it to the maximum integer
+                void Update(size_t mMaxMessages = -1)
+                {
+                    size_t nMessageCount = 0;
+                    while (nMessageCount < nMaxMessages && !m_qMessagesIn.empty())
+                    {
+                        // Grab the front message
+                        auto msg = m_qMessagesIn.pop_front();
+
+                        // Pass to message handler
+                        OnMessage(msg.remote, msg.msg);
+
+                        nMessageCount++;
                     }
                 }
 
         protected:
-
             // Called when the client connects , you can reject the connection by returning false
             virtual bool OnClientConnect(std::shared_ptr<connection<T>> client)
             {

@@ -23,7 +23,7 @@ server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o ${SERVERPATH}bin/serverOutput 
 
 registration: ${SERVERPATH}lib/registration.o
-	$(CXX) ${SERVERPATH}lib/registration.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -o ${SERVERPATH}bin/registrationOutput  
+	$(CXX) ${SERVERPATH}lib/registration.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/registrationOutput  
 
 include auth/*
 
