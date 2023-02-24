@@ -32,7 +32,7 @@ namespace olc
                     catch (const std::exception& e)
                     {
                         // Something prohibited the server from listening
-                        std::cerr << "[SERVER] Exception: " e.what() << '\n';
+                        std::cerr << "[SERVER] Exception: " << e.what() << '\n';
                         return false;
                     }
 
@@ -43,7 +43,7 @@ namespace olc
                 void Stop()
                 {
                     // Request the context to close
-                    m_asioContext.stop()
+                    m_asioContext.stop();
 
                     // Tidy up context thread 
                     if (m_threadContext.joinable())
@@ -65,24 +65,24 @@ namespace olc
                             {
                                 std::cout << "[SERVER] New Connection " << socket.remote_endpoint() << "\n";
 
-                                // std::shared_ptr<connection<T>> newConn =  
-                                //     std::make_shared<connection<T>>(connection<T>::owner::server, 
-                                //     m_asioContext, std::move(socket), m_qMessagesIn);
+                                std::shared_ptr<connection<T>> newConn =  
+                                    std::make_shared<connection<T>>(connection<T>::owner::server, 
+                                    m_asioContext, std::move(socket), m_qMessagesIn);
 
-                                // // Give the user server a chance to deny the connection
-                                // if (OnClientConnect(newconn))
-                                // {
-                                //     // Connection allowed, so add to container of new connections
-                                //     m_deqConnections.push_back(std::move(newconn));
+                                // Give the user server a chance to deny the connection
+                                if (OnClientConnect(newConn))
+                                {
+                                    // Connection allowed, so add to container of new connections
+                                    m_deqConnections.push_back(std::move(newConn));
 
-                                //     m_deqConnections.back()->ConnectToClient(nIDCounter++);
+                                    m_deqConnections.back()->ConnectToClient(nIDCounter++);
 
-                                //     std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
-                                // }
-                                // else
-                                // {
-                                //     std::cout << "[-----] Connection Denied\n";
-                                // }
+                                    std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
+                                }
+                                else
+                                {
+                                    std::cout << "[-----] Connection Denied\n";
+                                }
                             }
                             else
                             {
@@ -138,18 +138,18 @@ namespace olc
                             // The client cant be connected so assume its disconnected
                             OnClientDisconnect(client);
                             client.reset();
-                            bInvaldClientExists = true;
+                            bInvalidClientExists = true;
                         }
                     }
 
                     if (bInvalidClientExists)
                     {
-                        m_deqConnections.erase(std::remove(m_deqConnections.begin(), m_deqConnections.end(), nullptr), m_deqConnections.end())
+                        m_deqConnections.erase(std::remove(m_deqConnections.begin(), m_deqConnections.end(), nullptr), m_deqConnections.end());
                     }
                 }
 
                 // since size_t is an unsigned integer setting it to -1 sets it to the maximum integer
-                void Update(size_t mMaxMessages = -1)
+                void Update(size_t nMaxMessages = -1)
                 {
                     size_t nMessageCount = 0;
                     while (nMessageCount < nMaxMessages && !m_qMessagesIn.empty())
@@ -188,7 +188,7 @@ namespace olc
             tsqueue<owned_message<T>> m_qMessagesIn;
 
             // Container of active validated connections 
-            std::deque<std::shared_ptr<connection<T>> m_deqConnections;
+            std::deque<std::shared_ptr<connection<T>>> m_deqConnections;
 
             // Order of declaration is important - it is also the order of initialization
             asio::io_context m_asioContext;

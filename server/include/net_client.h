@@ -1,3 +1,6 @@
+#pragma once
+#include "net_common.h"
+#include "net_tsqueue.h"
 namespace olc
 {
     namespace net
@@ -12,23 +15,27 @@ namespace olc
                 {
                     try
                     {
-                        // Create Connection
-                        m_connection = std::make_unique<connection<T>>(); // TODO
-
-                        // Resolve the hostname / ip-address into tangible physical address
+                        // Resolve hostname/ip-address into tangiable physical address
                         asio::ip::tcp::resolver resolver(m_context);
-                        m_endpoints = resolver.resolve(host, std::to_string(port));
+                        asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port));
 
-                        // Tell the connection object to connect to the server
-                        m_connection -> ConnectToServer(m_endpoints);
+                        // Create connection
+                        m_connection = std::make_unique<connection<T>>(connection<T>::owner::client, m_context, asio::ip::tcp::socket(m_context), m_qMessagesIn);
+                        
+                        // Tell the connection object to connect to server
+                        m_connection->ConnectToServer(endpoints);
 
-                        // Start context thread
-                        thrContext = std::thread([this]() {m_context.run(); });
+                        // Start Context Thread
+                        thrContext = std::thread([this]() { m_context.run(); });
+
                     }
                     catch (const std::exception& e)
                     {
                         std::cerr << "Client Exception: " << e.what() << '\n';
+                        return false;
                     }
+
+                    return true;
                     
                 }
 

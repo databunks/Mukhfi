@@ -90,7 +90,7 @@ namespace olc
             message<T> msg;
 
             // A friendly string maker :3
-            friend std::ostream& operator << (std::ostream& const owned_message<T>& msg)
+            friend std::ostream& operator << (std::ostream& os, const owned_message<T>& msg)
             {
                 os << msg.msg;
                 return os;
