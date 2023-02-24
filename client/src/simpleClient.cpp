@@ -14,7 +14,8 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             olc::net::message<CustomMsgTypes> msg;
             msg.header.id = CustomMsgTypes::DirectMessage;
             msg << wagwan;
-            Send(msg);
+
+        
         }
 };
 
