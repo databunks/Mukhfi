@@ -11,13 +11,14 @@ CPP_MONGOCXX_PATH = /usr/local/include/mongocxx/v_noabi/
 CPP_LOCAL_LIB_PATH = /usr/local/lib
 
 ${SERVERPATH}lib/%.o: ${SERVERPATH}src/%.cpp
-	$(CXX) -c  $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -I${SERVERPATH}include/ 
+	$(CXX) -c  $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH}  -I${SERVERPATH}include/ 
 
 ${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
-	$(CXX) -c $< -o $@ ${CXXFLAGS} -L${CPP_LOCAL_LIB_PATH} -I${CLIENTPATH}include/ -I${SERVERPATH}include/
+	$(CXX) -c $< -o $@ ${CXXFLAGS} -L${CPP_LOCAL_LIB_PATH} -I${CLIENTPATH}include/ -I${SERVERPATH}include/ 
+	
 
 simpleClient: ${CLIENTPATH}lib/simpleClient.o
-	$(CXX) ${CLIENTPATH}lib/simpleClient.o -o ${CLIENTPATH}bin/simpleClientOutput
+	$(CXX) ${CLIENTPATH}lib/simpleClient.o -o ${CLIENTPATH}bin/simpleClientOutput -lncurses
 
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o ${SERVERPATH}bin/serverOutput 
@@ -35,4 +36,4 @@ registrationTest: ${SERVERPATH}bin/registrationOutput
 
 
 clean:
-	rm -rf ${SERVERPATH}lib/*.o ${SERVERPATH}bin/*
+	rm -rf ${SERVERPATH}lib/*.o ${SERVERPATH}bin/* ${CLIENTPATH}lib/*.o ${CLIENTPATH}bin/* 

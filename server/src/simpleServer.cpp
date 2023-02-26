@@ -36,7 +36,15 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
         // Called when a message arrives
         virtual void OnMessage(std::shared_ptr<olc::net::connection<CustomMsgTypes>> client, olc::net::message<CustomMsgTypes>& msg)
         {
-    
+            switch (msg.header.id)
+            {
+                case CustomMsgTypes::ServerPing:
+
+                    std::cout << "[" << client->GetID() << "]: Server Ping\n";
+                    
+                    // Send the message back to the client
+                    client->Send(msg);
+            }
         }
 };
 

@@ -1,5 +1,4 @@
 #pragma once
-
 #include "net_common.h"
 #include "net_tsqueue.h"
 #include "net_message.h"
@@ -19,9 +18,10 @@ namespace olc
                     client
                 };
 
+            public:
                 // constructor for connection
                 connection(owner parent, asio::io_context& asioContext, asio::ip::tcp::socket socket, tsqueue<owned_message<T>>& qIn)
-                   : m_asioContext(asioContext), m_socket(std::move(socket)), m_qMessagesIn(qIn)
+				: m_asioContext(asioContext), m_socket(std::move(socket)), m_qMessagesIn(qIn)
                 {
                     m_nOwnerType = parent;
                 }
@@ -47,22 +47,52 @@ namespace olc
                         }
                     }
                 }
-                bool ConnectToServer();
-                bool Disconnect();
+
+                bool ConnectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
+                {
+                    // only clients can ever connect to the server
+                    if (m_nOwnerType == owner::client)
+                    {
+                        // request asio to asynchronously connect to an endpoint
+                        asio::async_connect(m_socket, endpoints, 
+                        [this](std::error_code ec, asio::ip::tcp::endpoint endpoint)
+                        {
+                            if (!ec)
+                            {
+                                ReadHeader();
+                            }
+                        });
+                    }
+                }
+
+                bool Disconnect()
+                {
+                    if (IsConnected())
+                    {
+                        asio::post(m_asioContext, [this]() { m_socket.close(); });
+                    }
+                }
+
                 bool IsConnected() const
                 {
                     return m_socket.is_open();
                 }
-
+            
             public:
                 bool Send(const message<T>& msg)
                 {
                     asio::post(m_asioContext, 
                     [this, msg]()
                     {
-                        bool bWritingMessage = !mqMessagesOut.empty();
+                        bool bWritingMessage = !m_qMessagesOut.empty();
                         m_qMessagesOut.push_back(msg);
-                        WriteHeader();
+
+                        // if one message is already being written ignore writing the header
+                        if (!bWritingMessage)
+                        {
+                            WriteHeader();
+                        }
+                        
                     });
                 }
             
@@ -70,10 +100,9 @@ namespace olc
                 // Asynchronously prime the context ready to read the message header
                 void ReadHeader()
                 {
-                    asio::async_read(m_socket, asio::buffer(&m_msgTemporaryIn.header), sizeof(message_header<T>)),
+                    asio::async_read(m_socket, asio::buffer(&m_msgTemporaryIn.header, sizeof(message_header<T>)),
                     [this](std::error_code ec, std::size_t length)
                     {
-
                         if (!ec)
                         {
                             if (m_msgTemporaryIn.header.size > 0)
@@ -88,10 +117,10 @@ namespace olc
                         }
                         else
                         {
-                            std::cout << "[" << id << "] Read Header Fail.\n";
+                            std::cout << "[" << id << "] Failed to read the header.\n";
                             m_socket.close();
                         }
-                    }
+                    });
                 }
 
                 // Asynchronously prime the context ready to read the message body
@@ -109,13 +138,13 @@ namespace olc
                             std::cout << "[" << id << "] Read Body Fail.\n";
                             m_socket.close();
                         }
-                    }
+                    });
                 }
 
                 // Asynchronously prime the context to write a message header
                 void WriteHeader()
                 {
-                    asio::async_write(m_socket, asio::buffer(&m_qMessagesOut.front().header, sizeof(message_header<T>))),
+                    asio::async_write(m_socket, asio::buffer(&m_qMessagesOut.front().header, sizeof(message_header<T>)),
                     [this](std::error_code ec, std::size_t length)
                     {
                         if (!ec)
@@ -139,8 +168,9 @@ namespace olc
                             std::cout << "[" << id << "] Write Header Fail.\n";
                             m_socket.close();
                         }
-                    }
+                    });
                 }
+
 
                 // Asynchronously prime the context to write a message body
                 void WriteBody()
@@ -201,5 +231,5 @@ namespace olc
                 owner m_nOwnerType = owner::server;
                 uint32_t id = 0; // allocate identifiers to clients
         };
-    }
+    };
 }   

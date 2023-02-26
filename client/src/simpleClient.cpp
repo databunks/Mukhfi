@@ -1,48 +1,104 @@
 #include <iostream>
 #include <olc_net.h>
+#include <ncurses.h>
 
 enum class CustomMsgTypes : uint32_t
 {
-    DirectMessage
+    ServerAccept,
+    ServerDeny,
+    ServerPing,
+    MessageAll,
+    ServerMessage,
 };
 
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
-        bool SayWagWan(char* wagwan)
+        void PingServer()
         {
             olc::net::message<CustomMsgTypes> msg;
-            msg.header.id = CustomMsgTypes::DirectMessage;
-            msg << wagwan;
+            msg.header.id = CustomMsgTypes::ServerPing;
 
-        
-        }
+            // we are sending the time to the server, and the server will send it back so we can compare the time taken
+            std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
+
+            msg << timeNow;
+
+            Send(msg);
+        } 
 };
+
+
 
 int main()
 {
-    olc::net::message<CustomMsgTypes> msg;
-    msg.header.id = CustomMsgTypes::DirectMessage;
+    CustomClient c;
+    c.Connect("127.0.0.1", 600000);
 
-    int a = 1;
-    bool b = true;
-    float c = 3.1459f;
+    bool bQuit{false};
 
-    struct 
+    initscr();
+    keypad(stdscr, TRUE);
+    
+    
+    while (!bQuit)
     {
-        float x;
-        float y;
-    } d[5];
+        int ch = getch();
 
-   
+        bool keys[3] = {false, false, false};
 
-    msg << a << b << c << d;
 
-    a =  99;
-    b = false;
-    c = 99.0f;
+        if (ch == KEY_LEFT)
+        {
+            keys[0] = true;
+        }
 
-    msg >> d >> c >> b >> a;
+        switch (ch)
+        {
+            case KEY_LEFT:
+                c.PingServer();
+                break;
+            
+            case KEY_UP:
+                break;
 
-    return 0;
+            case KEY_RIGHT:
+                break;
+        }
+
+        if (keys[0]) c.PingServer();
+
+        printw("%d", keys[0]);
+
+        if (c.IsConnected())
+        {
+            printw("checking...");
+            if (!c.Incoming().empty())
+            {
+                printw("yes,....");
+                auto msg = c.Incoming().pop_front().msg;
+                
+                switch (msg.header.id)
+                {
+                    case CustomMsgTypes::ServerPing:
+                        std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
+                        std::chrono::system_clock::time_point timeThen;
+                        msg >> timeThen;
+                         
+
+                        printw("'Ping' %d\n", std::chrono::duration<double>(timeNow - timeThen).count());
+                        break;
+                }
+            }
+        }
+        else
+        {
+            std::cout << "Server is down" << std::endl;
+            bQuit = true;
+        }
+
+        //getch();
+        
+    }
+    return 0;   
 }

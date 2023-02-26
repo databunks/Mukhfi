@@ -1,6 +1,7 @@
 #pragma once
 #include "net_common.h"
 #include "net_tsqueue.h"
+
 namespace olc
 {
     namespace net
@@ -10,19 +11,31 @@ namespace olc
         {
             public:
 
-                // Connect to server with hostname/ip-address and port
+                // Constructor for client 
+                client_interface()
+                {}
+
+                // Disconnect client from server / destructor
+                virtual ~client_interface()
+                {
+                    Disconnect();
+                }
+
+            public:
                 bool Connect(const std::string& host, const uint16_t port)
                 {
                     try
                     {
-                        // Resolve hostname/ip-address into tangiable physical address
+                        // Resolve the host name or ip address into a physical address
                         asio::ip::tcp::resolver resolver(m_context);
+                    
                         asio::ip::tcp::resolver::results_type endpoints = resolver.resolve(host, std::to_string(port));
 
-                        // Create connection
-                        m_connection = std::make_unique<connection<T>>(connection<T>::owner::client, m_context, asio::ip::tcp::socket(m_context), m_qMessagesIn);
-                        
-                        // Tell the connection object to connect to server
+                        // Create a connection
+                        m_connection = std::make_unique<connection<T>>(connection<T>::owner::client, m_context, 
+                        asio::ip::tcp::socket(m_context), m_qMessagesIn);
+
+                        // this connects it to the server
                         m_connection->ConnectToServer(endpoints);
 
                         // Start Context Thread
@@ -75,6 +88,16 @@ namespace olc
                     }
                 }
 
+            public:
+
+                void Send(const message<T> msg)
+                {
+                    if (IsConnected())
+                    {
+                        m_connection -> Send(msg);
+                    }
+                }
+
                 // Retrieve queue of messages from the server
                 tsqueue<owned_message<T>>& Incoming()
                 {
@@ -87,9 +110,6 @@ namespace olc
 
                 //.. but it also needs a thread of its own if it is to execute its work commands
                 std::thread thrContext;
-
-                // This is the hardware socket that is connected to the server
-                asio::ip::tcp::socket m_socket;
 
                 // The client has a single instance of a "connection" object, handles data transfer
                 std::unique_ptr<connection<T>> m_connection;
