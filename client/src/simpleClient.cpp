@@ -33,7 +33,7 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 int main()
 {
     CustomClient c;
-    c.Connect("127.0.0.1", 600000);
+    c.Connect("127.0.0.1", 60000);
 
     bool bQuit{false};
 

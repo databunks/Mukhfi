@@ -76,7 +76,7 @@ namespace olc
                                     // Connection allowed, so add to container of new connections
                                     m_deqConnections.push_back(std::move(newConn));
 
-                                    m_deqConnections.back()->ConnectToClient(nIDCounter++);
+                                    m_deqConnections.back() -> ConnectToClient(nIDCounter++);
 
                                     std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
                                 }
@@ -127,7 +127,7 @@ namespace olc
                     for (auto& client : m_deqConnections)
                     {
                         // Check if client is connected
-                        if (client && client->IsConnected())
+                        if (client && client -> IsConnected())
                         {
                             if (client != pIgnoreClient)
                             {
@@ -150,8 +150,13 @@ namespace olc
                 }
 
                 // since size_t is an unsigned integer setting it to -1 sets it to the maximum integer
-                void Update(size_t nMaxMessages = -1)
+                void Update(size_t nMaxMessages = -1, bool bWait = false)
                 {
+                    if (bWait) 
+                    {
+                        m_qMessagesIn.wait();
+                    }
+
                     size_t nMessageCount = 0;
                     while (nMessageCount < nMaxMessages && !m_qMessagesIn.empty())
                     {

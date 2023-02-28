@@ -24,7 +24,7 @@ namespace olc
             // returns size of entire message packet in bytes
             size_t size() const
             {
-                return sizeof(message_header<T>) + body.size();
+                return body.size();;
             }
 
             // Override for std::cout compatibility - produces friendly description of message
@@ -58,10 +58,10 @@ namespace olc
             }
 
             template<typename DataType>
-            friend message<T>& operator >> (message<T> msg, DataType& data)
+            friend message<T>& operator >> (message<T>& msg, DataType& data)
             {
                 // Check that the type of the data being pushed is trivially copyable (that it is part of the standard library)
-                static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pushed into vector");
+                static_assert(std::is_standard_layout<DataType>::value, "Data is too complex to be pulled from the vector");
                 
                 // Cache the location  towards the end of the vector when the pulled data starts
                 size_t i = msg.body.size() - sizeof(DataType);

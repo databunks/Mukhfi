@@ -1,6 +1,5 @@
 #pragma once
 #include "net_common.h"
-#include "net_tsqueue.h"
 
 namespace olc
 {
@@ -90,7 +89,7 @@ namespace olc
 
             public:
 
-                void Send(const message<T> msg)
+                void Send(const message<T>& msg)
                 {
                     if (IsConnected())
                     {

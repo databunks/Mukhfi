@@ -21,7 +21,7 @@ namespace olc
             public:
                 // constructor for connection
                 connection(owner parent, asio::io_context& asioContext, asio::ip::tcp::socket socket, tsqueue<owned_message<T>>& qIn)
-				: m_asioContext(asioContext), m_socket(std::move(socket)), m_qMessagesIn(qIn)
+				 : m_asioContext(asioContext), m_socket(std::move(socket)), m_qMessagesIn(qIn)
                 {
                     m_nOwnerType = parent;
                 }
@@ -48,7 +48,7 @@ namespace olc
                     }
                 }
 
-                bool ConnectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
+                void ConnectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
                 {
                     // only clients can ever connect to the server
                     if (m_nOwnerType == owner::client)
@@ -65,7 +65,7 @@ namespace olc
                     }
                 }
 
-                bool Disconnect()
+                void Disconnect()
                 {
                     if (IsConnected())
                     {
@@ -77,13 +77,19 @@ namespace olc
                 {
                     return m_socket.is_open();
                 }
+
+                void StartListening()
+                {
+                    
+                }
             
             public:
-                bool Send(const message<T>& msg)
+                void Send(const message<T>& msg)
                 {
                     asio::post(m_asioContext, 
                     [this, msg]()
                     {
+                        
                         bool bWritingMessage = !m_qMessagesOut.empty();
                         m_qMessagesOut.push_back(msg);
 
