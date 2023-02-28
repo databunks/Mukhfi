@@ -14,6 +14,14 @@ enum class CustomMsgTypes : uint32_t
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
+
+        void MessageEveryone()
+        {
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = CustomMsgTypes::MessageAll;
+            Send(msg);
+        }
+
         void PingServer()
         {
             olc::net::message<CustomMsgTypes> msg;
@@ -30,6 +38,8 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
 
 
+
+
 int main()
 {
     CustomClient c;
@@ -43,15 +53,9 @@ int main()
     
     while (!bQuit)
     {
+        // i need to handle the getch in another thread
+        timeout(-1);
         int ch = getch();
-
-        bool keys[3] = {false, false, false};
-
-
-        if (ch == KEY_LEFT)
-        {
-            keys[0] = true;
-        }
 
         switch (ch)
         {
@@ -60,34 +64,47 @@ int main()
                 break;
             
             case KEY_UP:
+                c.MessageEveryone();
                 break;
 
             case KEY_RIGHT:
                 break;
         }
 
-        if (keys[0]) c.PingServer();
-
-        printw("%d", keys[0]);
 
         if (c.IsConnected())
         {
-            printw("checking...");
             if (!c.Incoming().empty())
             {
-                printw("yes,....");
                 auto msg = c.Incoming().pop_front().msg;
                 
                 switch (msg.header.id)
                 {
+
+                    case CustomMsgTypes::ServerAccept:
+                    {
+                        printw("We connected to the server! :-)\n");
+                        break;
+                    }
+                        
+
                     case CustomMsgTypes::ServerPing:
+                    {
                         std::chrono::system_clock::time_point timeNow = std::chrono::system_clock::now();
                         std::chrono::system_clock::time_point timeThen;
                         msg >> timeThen;
-                         
-
-                        printw("'Ping' %d\n", std::chrono::duration<double>(timeNow - timeThen).count());
+                        printw("'Ping' %f\n", std::chrono::duration<double>(timeNow - timeThen).count());
                         break;
+                    }
+
+                    case CustomMsgTypes::ServerMessage:
+                    {
+                        uint32_t id;
+                        msg >> id;
+                        printw("Your boy [%u] Wants to say hi to everyone :)\n", id);
+                        break;
+                    }              
+                    
                 }
             }
         }
@@ -96,9 +113,8 @@ int main()
             std::cout << "Server is down" << std::endl;
             bQuit = true;
         }
-
-        //getch();
         
+        //refresh();
     }
     return 0;   
 }

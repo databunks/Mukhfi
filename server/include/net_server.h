@@ -123,12 +123,14 @@ namespace olc
                 void MessageAllClients(const message<T>& msg, std::shared_ptr<connection<T>> pIgnoreClient = nullptr)
                 {
                     bool bInvalidClientExists = false;
-
+                    
                     for (auto& client : m_deqConnections)
                     {
+                        
                         // Check if client is connected
                         if (client && client -> IsConnected())
                         {
+                    
                             if (client != pIgnoreClient)
                             {
                                 client->Send(msg);
