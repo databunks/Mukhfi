@@ -18,13 +18,13 @@ ${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
 	
 
 simpleClient: ${CLIENTPATH}lib/simpleClient.o
-	$(CXX) ${CLIENTPATH}lib/simpleClient.o -o ${CLIENTPATH}bin/simpleClientOutput -lncurses
+	$(CXX) ${CLIENTPATH}lib/simpleClient.o -o ${CLIENTPATH}bin/simpleClientOutput -lncurses -lpthread
 
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o ${SERVERPATH}bin/serverOutput 
 
 simpleServer: ${SERVERPATH}lib/simpleServer.o
-	$(CXX) ${SERVERPATH}lib/simpleServer.o -lpthread -o  ${SERVERPATH}bin/simpleServerOutput
+	$(CXX) ${SERVERPATH}lib/simpleServer.o -o  ${SERVERPATH}bin/simpleServerOutput -lpthread
 
 registration: ${SERVERPATH}lib/registration.o
 	$(CXX) ${SERVERPATH}lib/registration.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/registrationOutput  

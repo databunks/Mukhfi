@@ -1,4 +1,6 @@
 auth
-*/lib/*
-*/bin/*
+server/bin/*
+client/bin/*
+server/lib/*
+client/lib/*
 .vscode

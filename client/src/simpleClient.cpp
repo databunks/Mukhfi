@@ -2,6 +2,7 @@
 #include <olc_net.h>
 #include <ncurses.h>
 
+
 enum class CustomMsgTypes : uint32_t
 {
     ServerAccept,
@@ -47,14 +48,15 @@ int main()
 
     bool bQuit{false};
 
-    initscr();
+    WINDOW *w = initscr();
+    cbreak();
+    nodelay(w, TRUE);
     keypad(stdscr, TRUE);
     
     
     while (!bQuit)
     {
         // i need to handle the getch in another thread
-        timeout(-1);
         int ch = getch();
 
         switch (ch)
