@@ -93,8 +93,8 @@ RegistrationCodes ValidatePassword(std::string password)
     for (char c : password)
     {
         bool check = false;
-        
-        for (int i = 0; i < validPasswordCharsLen; i++))
+
+        for (int i = 0; i < validPasswordCharsLen; i++)
         {
             if (c == validPasswordChars[i])
             {
