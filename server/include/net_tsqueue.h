@@ -63,7 +63,7 @@ namespace olc
 					deqQueue.emplace_front(std::move(item));
 
 					std::unique_lock<std::mutex> ul(muxBlocking);
-					cvBlocking.notify_one();
+					cvBlocking.notify_one(); // notifying stops blocking and awakes from sleeping
 				}
 
 				// Returns true if Queue has no items
@@ -89,6 +89,7 @@ namespace olc
 
 				void wait()
 				{
+					// checks if queue is empty or not
 					while (empty())
 					{
 						std::unique_lock<std::mutex> ul(muxBlocking);
@@ -97,9 +98,9 @@ namespace olc
 				}
 
 			protected:
-				std::mutex muxQueue;
+				std::mutex muxQueue; // mutexes offer synchronization
 				std::deque<T> deqQueue;
-				std::condition_variable cvBlocking;
+				std::condition_variable cvBlocking; // used to make thread wait
 				std::mutex muxBlocking;
 			};
 	}

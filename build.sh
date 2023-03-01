@@ -1,1 +1,1 @@
-make clean && make simpleServer && make simpleClient
+make clean && make server && make client

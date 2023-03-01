@@ -1,1 +1,1 @@
-client/bin/simpleClientOutput
+client/bin/clientOutput

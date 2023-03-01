@@ -26,7 +26,7 @@ using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
 
-int main(int argc, char *argv[])
+void RegisterUser(std::string username, std::string password, )
 {
     // MongoCXX setup
 

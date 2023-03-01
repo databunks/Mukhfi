@@ -56,7 +56,6 @@ int main()
     
     while (!bQuit)
     {
-        // i need to handle the getch in another thread
         int ch = getch();
 
         switch (ch)
@@ -115,8 +114,6 @@ int main()
             std::cout << "Server is down" << std::endl;
             bQuit = true;
         }
-        
-        //refresh();
     }
     return 0;   
 }

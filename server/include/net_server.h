@@ -154,6 +154,8 @@ namespace olc
                 // since size_t is an unsigned integer setting it to -1 sets it to the maximum integer
                 void Update(size_t nMaxMessages = -1, bool bWait = false)
                 {
+
+                    // Reduces cpu usage
                     if (bWait) 
                     {
                         m_qMessagesIn.wait();

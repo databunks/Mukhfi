@@ -1,1 +1,1 @@
-server/bin/simpleServerOutput
+server/bin/serverOutput
