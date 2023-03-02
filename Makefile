@@ -28,9 +28,5 @@ registration: ${SERVERPATH}lib/registration.o
 
 include auth/*
 
-registrationTest: ${SERVERPATH}bin/registrationOutput
-	${SERVERPATH}bin/./registrationOutput $(username) $(password) $(cluster)
-
-
 clean:
 	rm -rf ${SERVERPATH}lib/*.o ${SERVERPATH}bin/* ${CLIENTPATH}lib/*.o ${CLIENTPATH}bin/* 
