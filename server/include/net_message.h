@@ -83,6 +83,9 @@ namespace olc
         template <typename T>
         class connection;
 
+        // An "owned" message is identical to a regular message, but it is associated with
+		// a connection. On a server, the owner would be the client that sent the message, 
+		// on a client the owner would be the server.
         template <typename T>
         struct owned_message
         {

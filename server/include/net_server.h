@@ -209,6 +209,33 @@ namespace olc
 
             // Clients will be identified in the wider system via an ID
             uint32_t nIDCounter = 10000;
+
+        private:
+
+            // Each token will have a timestamp associated with it so we can set expiry
+            std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
+
+
+            void Login(std::string username, std::string password)
+            {
+
+            }
+
+            // void RemoveToken(std::vector<std::string> &tokens, std::string token)
+            // {
+            //     std::vector<std::string>::iterator it = std::find(tokens.begin(), tokens.end(), token);
+
+            //     if (*(tokens.end() - 1) == *it)
+            //     {
+            //         tokens.pop_back();
+            //     }
+            //     else
+            //     {
+            //         tokens.erase(it);
+            //     }
+                
+            // }
+
         };
     }
 }

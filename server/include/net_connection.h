@@ -24,6 +24,12 @@ namespace olc
 				 : m_asioContext(asioContext), m_socket(std::move(socket)), m_qMessagesIn(qIn)
                 {
                     m_nOwnerType = parent;
+
+                    // Validation check
+                    if (m_nOwnerType != owner::server)
+                    {
+
+                    }
                 }
 
                 // destructor for connection
@@ -43,7 +49,18 @@ namespace olc
                         if (m_socket.is_open())
                         {
                             id = uid;
-                            ReadHeader();
+
+                            // client has attempted to connect to the server but we must first make the client validate it
+                            // client has to first validate itself so it must have either:
+                            // a token (logged in)
+                            // request a token (log in)
+                            // register 
+                            WriteValidation();
+
+                            // Next we issue a task to sit and wait asynchronously for precisely
+                            // the validation data sent back from the client
+
+                            ReadValidation(server);
                         }
                     }
                 }
@@ -59,7 +76,11 @@ namespace olc
                         {
                             if (!ec)
                             {
-                                ReadHeader();
+                                ReadValidation();
+                            }
+                            else
+                            {
+                                std::cerr << "[ERROR] Connecting to server (ConnectToServer)" << std::endl; 
                             }
                         });
                     }
@@ -218,6 +239,59 @@ namespace olc
                     ReadHeader();
                 }
 
+                void ReadValidation(olc::net::server_interface<T>* server = nullptr)
+                {
+                    asio::async_read(m_socket, asio::buffer(&m_nHandshakeIn, sizeof(uint64_t)),
+                    [this, server](std::error_code ec, std::size_t length)
+                    {
+                        
+                        if (!ec)
+                        {
+                            if (m_nOwnerType == owner::server)
+                            {
+
+                            }
+                            else
+                            {
+                                // Connection is client so we must verify its authentication
+
+                                // client has attempted to connect to the server but we must first make the client validate it
+                                // client has to first validate itself so it must have either:
+                                
+                                // a token (logged in)
+                                // request a token (log in)
+                                // register 
+                            }
+                        }
+                        else
+                        {
+                            std::cerr << "[ERROR] Client Disconnected (ReadValidation)" + std::endl;
+                            m_socket.close();
+                        }
+                    });
+                }
+
+                void WriteValidation()
+                {
+                    asio::async_write(m_socket, asio::buffer(&m_nHandshakeOut, sizeof(uint64_t)),
+                        [this](std::error_code ec, std::size_t length)
+                        {
+                            if (!ec)
+                            {
+                                // Validation data sent, clients now wait for a response
+
+                                if (m_nOwnerType == owner::client)
+                                {
+                                    ReadHeader();
+                                }
+                                else
+                                {
+                                    m_socket.close();
+                                }
+                            }
+                        });
+                }        
+
             protected:
                 // Each connection has a unique socket to a remote
                 asio::ip::tcp::socket m_socket;
@@ -236,6 +310,11 @@ namespace olc
                 // The owner decides how the connection behaves
                 owner m_nOwnerType = owner::server;
                 uint32_t id = 0; // allocate identifiers to clients
+
+                // 3 way handshake
+                u_int32_t m_nHandshakeOut = 0;
+                u_int32_t m_nHandshakeIn = 0;
+                u_int32_t m_nHandshakeCheck = 0;
         };
     };
 }   
