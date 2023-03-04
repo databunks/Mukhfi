@@ -36,18 +36,18 @@ using bsoncxx::builder::stream::open_document;
 
 enum class RegistrationCodes : uint32_t
 {
-    ValidInput = 0,
-    UsernameLong = 1,
-    UsernameShort = 2,
-    UsernameInvalidCharacters = 4,
-    PasswordLong = 8,
-    PasswordShort = 16,
-    PasswordInvalidCharacters = 32,
-    PasswordSpecialCharacterEmpty = 64,
-    PasswordNumberEmpty = 128,
-    PasswordCapitalLetterEmpty = 256,
-    PasswordLowercaseLetterEmpty = 512,
-    DatabaseError = 1024,
+    ValidInput = 1,
+    UsernameLong = 2,
+    UsernameShort = 4,
+    UsernameInvalidCharacters = 8,
+    PasswordLong = 16,
+    PasswordNotHashed = 32,
+    // PasswordInvalidCharacters = 32,
+    // PasswordSpecialCharacterEmpty = 64,
+    // PasswordNumberEmpty = 128,
+    // PasswordCapitalLetterEmpty = 256,
+    // PasswordLowercaseLetterEmpty = 512,
+    DatabaseError = 64,
 };
 
 
@@ -71,16 +71,54 @@ class Registration
                 // setting up mongodb instance
                 mongocxx::instance instance{};
 
+                mongocxx::options::client client_options;
+
+                auto api = mongocxx::options::server_api{mongocxx::options::server_api::version::k_version_1};
+                client_options.server_api_opts (api);
+
                 // Database credentials
                 std::string dbUsername{ ReadFromEnvFile("username") };
                 std::string dbPassword{ ReadFromEnvFile("password") };
                 std::string dbCluster{ ReadFromEnvFile("cluster") };
 
+                // establishing a connection to the database
                 std::string uriString{ std::string( "mongodb+srv://" ) + dbUsername + std::string(":") + dbPassword + std::string( "@" ) + dbCluster + std::string( ".2ev07.mongodb.net/?retryWrites=true&w=majority") };
-                
-                mongocxx::client client{ mongocxx::uri{ uriString.c_str()} } ;
+                mongocxx::uri mongoURI = mongocxx::uri{ uriString };
 
+                mongocxx::client client{mongoURI, client_options } ;
                 mongocxx::database db = client[dbCluster];
+
+                
+                // check if there is a current matching username in the database
+
+                // if not then register them in 
+                auto builder = bsoncxx::builder::stream::document{};
+                bsoncxx::document::value doc_value = builder
+                << "username" << username
+                << "password" << password
+                << bsoncxx::builder::stream::finalize;
+
+
+                // bsoncxx::document::view view = doc_value.view();
+                // bsoncxx::document::element element = view["name"];
+                // if(element.type() != bsoncxx::type::k_string) {
+                // // Error
+                // }
+                // std::string name = element.get_string().value.to_string();
+
+                mongocxx::collection user = db["users"];
+
+                bsoncxx::stdx::optional<mongocxx::result::insert_one> result = user.insert_one(doc_value.view());
+                if (result)
+                {
+                    std::cout << "Success" << std::endl;
+                }
+                else 
+                {
+                    std::cerr << "Fail" << std::endl;
+                }
+                
+
 
                 return u_int32_t(RegistrationCodes::ValidInput);
             }
@@ -102,6 +140,8 @@ class Registration
             envFile.open("../../auth/DatabaseCredentials.env");
             std::string envVar;
 
+            // std::cout << "\nKEY:" << "Test" << "\n";
+
             if (envFile.is_open())
             {
                 while (envFile)
@@ -110,6 +150,7 @@ class Registration
 
                     std::string key{envVar.substr(0, envVar.find("="))};
 
+                   
                     if (keyToFind == key)
                     {
                         return envVar.substr(envVar.find("=") + 1, envVar.length());
@@ -153,53 +194,57 @@ class Registration
 
     private:
 
+        // Password Strength should be validated at client side pre hash
         // Checking if the password is valid
         RegistrationCodes ValidatePassword(std::string password)
         {
             int passwordLen = password.length();
 
-            // Checking password size
-            if (passwordLen > 30)
+            std::regex alnum("^[A-Za-z0-9]+$"); 
+
+            // Checking password is sha256 hash
+            if ( (passwordLen != 64) | (!std::regex_match(password, alnum)) )
             {
-                return RegistrationCodes::PasswordLong;
+                std::cout << "Test";
+                return RegistrationCodes::PasswordNotHashed;
             }
             
-            if (passwordLen <= 8)
-            {
-                return RegistrationCodes::PasswordShort;
-            }
+            // if (passwordLen < 64)
+            // {
+            //     return RegistrationCodes::PasswordShort;
+            // }
 
-            // checking if it contains valid characters
-            std::regex validPwdChars(R"(^[A-Za-z0-9~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)"); 
+            // // checking if it contains valid characters
+            // std::regex validPwdChars(R"(^[A-Za-z0-9~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)"); 
             
-            if (!std::regex_match(password, validPwdChars))
-            {
-                return RegistrationCodes::PasswordInvalidCharacters;
-            }
+            // if (!std::regex_match(password, validPwdChars))
+            // {
+            //     return RegistrationCodes::PasswordInvalidCharacters;
+            // }
 
-            // Checking if it contains at least one special character
-            std::regex specialCharacterCheck(R"(^[~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)");
+            // // Checking if it contains at least one special character
+            // std::regex specialCharacterCheck(R"(^[~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)");
 
-            if (!std::regex_match(password, specialCharacterCheck))
-            {
-                return RegistrationCodes::PasswordSpecialCharacterEmpty;
-            }
+            // if (!std::regex_match(password, specialCharacterCheck))
+            // {
+            //     return RegistrationCodes::PasswordSpecialCharacterEmpty;
+            // }
 
-            // Checking if it has at least one capital letter
-            std::regex capitalLetterCheck(R"(^[A-Z]+$)");
+            // // Checking if it has at least one capital letter
+            // std::regex capitalLetterCheck(R"(^[A-Z]+$)");
 
-            if (!std::regex_match(password, capitalLetterCheck))
-            {
-                return RegistrationCodes::PasswordCapitalLetterEmpty;
-            }
+            // if (!std::regex_match(password, capitalLetterCheck))
+            // {
+            //     return RegistrationCodes::PasswordCapitalLetterEmpty;
+            // }
 
-            // Checking if it has at least one lower case
-            std::regex lowercaseLetterCheck(R"(^[a-z]+$)");
+            // // Checking if it has at least one lower case
+            // std::regex lowercaseLetterCheck(R"(^[a-z]+$)");
 
-            if (!std::regex_match(password, lowercaseLetterCheck))
-            {
-                return RegistrationCodes::PasswordLowercaseLetterEmpty;
-            }
+            // if (!std::regex_match(password, lowercaseLetterCheck))
+            // {
+            //     return RegistrationCodes::PasswordLowercaseLetterEmpty;
+            // }
 
             return RegistrationCodes::ValidInput;
             
@@ -210,5 +255,5 @@ class Registration
 int main()
 {
     Registration r;
-    printf("%d", r.RegisterUser("Mr Boombastic", "Fat"));
+    printf("%d", r.RegisterUser("MrBoombastic", "c8fea865a2ded626c6882616f7703e25deeafbf2f65ad25d29cea8a6a879f32f"));
 }
