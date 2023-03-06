@@ -23,8 +23,8 @@ client: ${CLIENTPATH}lib/client.o
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o  ${SERVERPATH}bin/serverOutput -lpthread
 
-registration: ${SERVERPATH}lib/registration.o
-	$(CXX) ${SERVERPATH}lib/registration.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/registrationOutput  
+registrationLogin: ${SERVERPATH}lib/RegistrationLogin.o
+	$(CXX) ${SERVERPATH}lib/RegistrationLogin.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/RegistrationLoginOutput  
 
 include auth/*
 
