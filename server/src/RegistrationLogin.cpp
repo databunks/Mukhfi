@@ -168,10 +168,3 @@ class RegistrationLogin
             return error;
         }        
 };
-
-
-int main()
-{
-    RegistrationLogin r;
-    std::cout << r.LoginUser("HispanicTraumatic", "c8fea865a2ded626c6882616f7703e25deeafbf2f65ad25d29cea8a6a879f32f");
-}
