@@ -1,163 +1,99 @@
-#include <cstdint>
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cwctype>
-#include <regex>
-#include <sstream>
-#include <fstream>
-
-
-#include <bsoncxx/json.hpp>
-#include <mongocxx/client.hpp>
-#include <mongocxx/stdx.hpp>
-#include <mongocxx/uri.hpp>
-#include <mongocxx/instance.hpp>
-#include <bsoncxx/builder/stream/helpers.hpp>
-#include <bsoncxx/builder/stream/document.hpp>
-#include <bsoncxx/builder/stream/array.hpp>
-
-using bsoncxx::builder::stream::close_array;
-using bsoncxx::builder::stream::close_document;
-using bsoncxx::builder::stream::document;
-using bsoncxx::builder::stream::finalize;
-using bsoncxx::builder::stream::open_array;
-using bsoncxx::builder::stream::open_document;
-
-// Codes which display the status of the registration process
-// The enums are formatted in a sense of each enum representing a bit
-// i.e enumVar 1 = 2^0, enumVar 2 = 2^1
-// These are the flags to represent what the error code is
-
-enum class RegistrationCodes : uint32_t
-{
-    Success = 1,
-    UsernameLong = 2,
-    UsernameShort = 4,
-    UsernameInvalidCharacters = 8,
-    PasswordLong = 16,
-    PasswordNotHashed = 32,
-    // PasswordInvalidCharacters = 32,
-    // PasswordSpecialCharacterEmpty = 64,
-    // PasswordNumberEmpty = 128,
-    // PasswordCapitalLetterEmpty = 256,
-    // PasswordLowercaseLetterEmpty = 512,
-    UserAlreadyExists = 64,
-    UserDoesNotExist = 128,
-    DatabaseError = 256,
-};
-
-
+#include <db_reglogin.h>
 class RegistrationLogin
 {
     private:
-        mongocxx::database InstantiateDatabaseConnection()
-        {
-            // setting up mongodb instance
-            mongocxx::instance instance{};
+        // setting up mongodb instance
+        mongocxx::instance instance{};
 
-            mongocxx::options::client client_options;
+        mongocxx::options::client client_options;
 
-            auto api = mongocxx::options::server_api{mongocxx::options::server_api::version::k_version_1};
-            client_options.server_api_opts (api);
+        // Database credentials
+        std::string dbUsername{ ReadFromEnvFile("username") };
+        std::string dbPassword{ ReadFromEnvFile("password") };
+        std::string dbCluster{ ReadFromEnvFile("cluster") };
 
-            // Database credentials
-            std::string dbUsername{ ReadFromEnvFile("username") };
-            std::string dbPassword{ ReadFromEnvFile("password") };
-            std::string dbCluster{ ReadFromEnvFile("cluster") };
+        // establishing a connection to the database
+        std::string uriString{ std::string( "mongodb+srv://" ) + dbUsername + std::string(":") + dbPassword + std::string( "@" ) + dbCluster + std::string( ".2ev07.mongodb.net/?retryWrites=true&w=majority") };
+        mongocxx::uri mongoURI = mongocxx::uri{ uriString };
 
-            // establishing a connection to the database
-            std::string uriString{ std::string( "mongodb+srv://" ) + dbUsername + std::string(":") + dbPassword + std::string( "@" ) + dbCluster + std::string( ".2ev07.mongodb.net/?retryWrites=true&w=majority") };
-            mongocxx::uri mongoURI = mongocxx::uri{ uriString };
 
-            std::cout << uriString << std::endl;
+        mongocxx::client client{mongoURI, client_options };
+        mongocxx::database db = client["Mukhfi"];
+        mongocxx::collection users = db["users"];
 
-            mongocxx::client client{mongoURI, client_options };
-            mongocxx::database db = client["Mukhfi"];
-            return db;
-        }
+        // Helper functions used in registering and logging in
+        HelperFunctions h;
+        
 
     public:
     // Logging in the user 
         std::string LoginUser(std::string username, std::string password)
         {
-            RegistrationCodes usernameVerificationCode {ValidateUsername(username)};
-            RegistrationCodes passwordVerificationCode {ValidatePassword(password)};
+            RegistrationLoginCodes usernameVerificationCode {h.ValidateUsername(username)};
+            RegistrationLoginCodes passwordVerificationCode {h.ValidatePassword(password)};
 
-            if ((usernameVerificationCode != RegistrationCodes::Success) | (passwordVerificationCode != RegistrationCodes::Success))
+            if ((usernameVerificationCode != RegistrationLoginCodes::Success) | (passwordVerificationCode != RegistrationLoginCodes::Success))
             {
-                //return std::string(u_int32_t(usernameVerificationCode) | uint32_t(passwordVerificationCode));
+                return std::to_string(u_int32_t(usernameVerificationCode) | uint32_t(passwordVerificationCode));
             }
-
+            
             try
             {
-                mongocxx::database db = InstantiateDatabaseConnection();
-                mongocxx::collection users = db["users"];
-                
                 //check if there is a current matching username in the database
                 bsoncxx::stdx::optional<bsoncxx::document::value> result =
                 users.find_one(document {} << "username" << username << finalize);
 
                 if(result) 
                 {
-                    // if user exists log them in
-                    auto builder = bsoncxx::builder::stream::document{};
-                    bsoncxx::document::value doc_value = builder
-                    << "username" << username
-                    << "password" << password
-                    << bsoncxx::builder::stream::finalize;
+                    std::cout << "[INFO] User exists, checking for matching password...." << std::endl;
 
-                    bsoncxx::stdx::optional<mongocxx::result::insert_one> result = users.insert_one(doc_value.view());
+                    // if user exists check for matching password
+                    result = users.find_one(document {} << "username" << username << "password" << password << finalize);
+
                     if (result)
                     {
-                        std::cout << "[INFO] User exists, Generating token...." << std::endl;
+                        std::cout << "[Success] Matching password found!, Generating token...." << std::endl;
+                        return h.GenerateToken();
                     }
                     else 
                     {
-                        std::cerr << "[ERROR] Failed to find user" << std::endl;
+                        std::cerr << "[ERROR] Failed to find user with matching password" << std::endl;
+                        return std::to_string(u_int32_t(RegistrationLoginCodes::PasswordNoMatchFound));
                     }
 
                 }
                 else
                 {
                     std::cerr << "[ERROR] User does not exist" << std::endl;
-                    //return std::string(u_int32_t(RegistrationCodes::UserAlreadyExists));
+                    return std::to_string(u_int32_t(RegistrationLoginCodes::UserAlreadyExists));
                 }
         
-                //return u_int32_t(RegistrationCodes::Success);
+                return std::to_string(u_int32_t(RegistrationLoginCodes::Success));
             }
             catch(const std::exception& e)
             {
                 std::cerr << e.what() << '\n';
-                //return u_int32_t(RegistrationCodes::DatabaseError);
+                return std::to_string(u_int32_t(RegistrationLoginCodes::DatabaseError));
             }
 
             
         }
-
-    private:
-        // Generate the token
-        std::string GenerateToken()
-        {
-            std::mt19937_64 r;
-        }
+        
 
     public:
     // Registering the user
         uint32_t RegisterUser(std::string username, std::string password)
         {
-            RegistrationCodes usernameVerificationCode {ValidateUsername(username)};
-            RegistrationCodes passwordVerificationCode {ValidatePassword(password)};
+            RegistrationLoginCodes usernameVerificationCode {h.ValidateUsername(username)};
+            RegistrationLoginCodes passwordVerificationCode {h.ValidatePassword(password)};
 
-            if ((usernameVerificationCode != RegistrationCodes::Success) | (passwordVerificationCode != RegistrationCodes::Success))
+            if ((usernameVerificationCode != RegistrationLoginCodes::Success) | (passwordVerificationCode != RegistrationLoginCodes::Success))
             {
                 return u_int32_t(usernameVerificationCode) | uint32_t(passwordVerificationCode);
             }
             
             try
             {
-                mongocxx::database db = InstantiateDatabaseConnection();
-                mongocxx::collection users = db["users"];
                 
                 //check if there is a current matching username in the database
                 bsoncxx::stdx::optional<bsoncxx::document::value> result =
@@ -176,25 +112,27 @@ class RegistrationLogin
                     if (result)
                     {
                         std::cout << "[SUCCESS] Successfully registered user" << std::endl;
+                        return u_int32_t(RegistrationLoginCodes::Success);
                     }
                     else 
                     {
                         std::cerr << "[ERROR] Failed to register user" << std::endl;
+                        return u_int32_t(RegistrationLoginCodes::DatabaseError);
                     }
 
                 }
                 else
                 {
                     std::cerr << "[ERROR] User already exists" << std::endl;
-                    return u_int32_t(RegistrationCodes::UserAlreadyExists);
+                    return u_int32_t(RegistrationLoginCodes::UserAlreadyExists);
                 }
         
-                return u_int32_t(RegistrationCodes::Success);
+                return u_int32_t(RegistrationLoginCodes::Success);
             }
             catch(const std::exception& e)
             {
                 std::cerr << e.what() << '\n';
-                return u_int32_t(RegistrationCodes::DatabaseError);
+                return u_int32_t(RegistrationLoginCodes::DatabaseError);
             }
             
            
@@ -228,99 +166,12 @@ class RegistrationLogin
             std::cerr << error;
 
             return error;
-        }
-
-    private:
-
-        // Checking if the username is valid
-        RegistrationCodes ValidateUsername(std::string username)
-        {
-            int usernameLen = username.length();
-
-            // Checking if username length is too long
-            if (usernameLen > 20)
-            {
-                return RegistrationCodes::UsernameLong;
-            }
-
-            // Checking if username length is too short
-            if (usernameLen <= 4)
-            {
-                return RegistrationCodes::UsernameShort;
-            }
-
-            // Checking if username is alphanumeric
-            std::regex alnum("^[A-Za-z0-9]+$"); 
-            if (!std::regex_match(username,alnum))
-            {
-                return RegistrationCodes::UsernameInvalidCharacters;
-            }
-            
-            return RegistrationCodes::Success;
-        }
-
-    private:
-
-        // Password Strength should be validated at client side pre hash
-        // Checking if the password is valid
-        RegistrationCodes ValidatePassword(std::string password)
-        {
-            int passwordLen = password.length();
-
-            std::regex alnum("^[A-Za-z0-9]+$"); 
-
-            // Checking password is sha256 hash
-            if ( (passwordLen != 64) | (!std::regex_match(password, alnum)) )
-            {
-                std::cout << "Test";
-                return RegistrationCodes::PasswordNotHashed;
-            }
-            
-            // if (passwordLen < 64)
-            // {
-            //     return RegistrationCodes::PasswordShort;
-            // }
-
-            // // checking if it contains valid characters
-            // std::regex validPwdChars(R"(^[A-Za-z0-9~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)"); 
-            
-            // if (!std::regex_match(password, validPwdChars))
-            // {
-            //     return RegistrationCodes::PasswordInvalidCharacters;
-            // }
-
-            // // Checking if it contains at least one special character
-            // std::regex specialCharacterCheck(R"(^[~!@#$%^&*\(\)\_\-\+=\{\[\}\]\|\:;"'<,>\?]+$)");
-
-            // if (!std::regex_match(password, specialCharacterCheck))
-            // {
-            //     return RegistrationCodes::PasswordSpecialCharacterEmpty;
-            // }
-
-            // // Checking if it has at least one capital letter
-            // std::regex capitalLetterCheck(R"(^[A-Z]+$)");
-
-            // if (!std::regex_match(password, capitalLetterCheck))
-            // {
-            //     return RegistrationCodes::PasswordCapitalLetterEmpty;
-            // }
-
-            // // Checking if it has at least one lower case
-            // std::regex lowercaseLetterCheck(R"(^[a-z]+$)");
-
-            // if (!std::regex_match(password, lowercaseLetterCheck))
-            // {
-            //     return RegistrationCodes::PasswordLowercaseLetterEmpty;
-            // }
-
-            return RegistrationCodes::Success;
-            
-        }
+        }        
 };
 
 
 int main()
 {
     RegistrationLogin r;
-    printf("%d", r.RegisterUser("MrBeoomblastic", "c8fea865a2ded626c6882616f7703e25deeafbf2f65ad25d29cea8a6a879f32f"));
+    std::cout << r.LoginUser("HispanicTraumatic", "c8fea865a2ded626c6882616f7703e25deeafbf2f65ad25d29cea8a6a879f32f");
 }
