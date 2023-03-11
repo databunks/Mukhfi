@@ -1,4 +1,5 @@
-#include <db_reglogin.h>
+#include <db_regLoginHelper.h>
+
 class RegistrationLogin
 {
     private:

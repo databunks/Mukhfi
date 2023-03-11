@@ -76,7 +76,7 @@ namespace olc
                                     // Connection allowed, so add to container of new connections
                                     m_deqConnections.push_back(std::move(newConn));
 
-                                    m_deqConnections.back() -> ConnectToClient(nIDCounter++);
+                                    m_deqConnections.back() -> ConnectToClient(this, nIDCounter++);
 
                                     std::cout << "[" << m_deqConnections.back() -> GetID() << "] Connection Approved\n";
                                 }
@@ -193,6 +193,13 @@ namespace olc
 
             }
 
+        public:
+            // Called when a client is validated
+            virtual void OnClientValidated(std::shared_ptr<connection<T>> client)
+            {
+
+            }
+
         protected:
             // Thread safe Queue for incoming message packets
             tsqueue<owned_message<T>> m_qMessagesIn;
@@ -210,16 +217,48 @@ namespace olc
             // Clients will be identified in the wider system via an ID
             uint32_t nIDCounter = 10000;
 
+        public:
+
+        static void AddToken(std::string token)
+        {
+            tokens.insert({token, std::chrono::system_clock::now()});
+        }
+
+        static bool ValidateToken(std::string token)
+        {
+            auto it = tokens.find(token);
+
+            if (it != tokens.end()) 
+            {
+                // Get the current time point
+                std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+                // Compare the two time points
+                if (it > now + std::chrono::minutes(5)) 
+                {
+                    tokens.erase(token);
+                    std::cout << "[INFO] Token expired";
+                    return false;
+                } 
+                else 
+                {
+                    std::cout << "[INFO] Valid token";
+                    return true;
+                }
+            } 
+            else 
+            {
+                std::cout << "[INFO] Invalid token" << std::endl;
+                return false;
+            }
+
+            
+        }
+
         private:
 
             // Each token will have a timestamp associated with it so we can set expiry
-            std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
-
-
-            void Login(std::string username, std::string password)
-            {
-
-            }
+            static std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
 
             // void RemoveToken(std::vector<std::string> &tokens, std::string token)
             // {

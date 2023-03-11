@@ -11,10 +11,10 @@ CPP_MONGOCXX_PATH = /usr/local/include/mongocxx/v_noabi/
 CPP_LOCAL_LIB_PATH = /usr/local/lib
 
 ${SERVERPATH}lib/%.o: ${SERVERPATH}src/%.cpp
-	$(CXX) -c  $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH}  -I${SERVERPATH}include/ 
+	$(CXX) -c  $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH}   -I${SERVERPATH}include/ 
 
 ${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
-	$(CXX) -c $< -o $@ ${CXXFLAGS} -L${CPP_LOCAL_LIB_PATH} -I${CLIENTPATH}include/ -I${SERVERPATH}include/ 
+	$(CXX) -c $< -o $@ ${CXXFLAGS} -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH} -L${CPP_LOCAL_LIB_PATH} -I${CLIENTPATH}include/ -I${SERVERPATH}include/ 
 	
 
 client: ${CLIENTPATH}lib/client.o
@@ -23,8 +23,8 @@ client: ${CLIENTPATH}lib/client.o
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -o  ${SERVERPATH}bin/serverOutput -lpthread
 
-registrationLogin: ${SERVERPATH}lib/RegistrationLogin.o
-	$(CXX) ${SERVERPATH}lib/RegistrationLogin.o -I${CPP_MONGOCXX_PATH}  -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/RegistrationLoginOutput  
+registrationLogin: ${SERVERPATH}lib/registrationLogin.o
+	$(CXX) ${SERVERPATH}lib/registrationLogin.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/registrationLoginOutput  
 
 include auth/*
 
