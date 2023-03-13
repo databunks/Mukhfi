@@ -219,12 +219,12 @@ namespace olc
 
         public:
 
-        static void AddToken(std::string token)
+        void AddToken(std::string token)
         {
             tokens.insert({token, std::chrono::system_clock::now()});
         }
 
-        static bool ValidateToken(std::string token)
+        bool ValidateToken(std::string token)
         {
             auto it = tokens.find(token);
 
@@ -234,7 +234,7 @@ namespace olc
                 std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 
                 // Compare the two time points
-                if (it > now + std::chrono::minutes(5)) 
+                if (it->second > (now + std::chrono::seconds(300))) 
                 {
                     tokens.erase(token);
                     std::cout << "[INFO] Token expired";
@@ -258,7 +258,7 @@ namespace olc
         private:
 
             // Each token will have a timestamp associated with it so we can set expiry
-            static std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
+            std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
 
             // void RemoveToken(std::vector<std::string> &tokens, std::string token)
             // {

@@ -8,6 +8,7 @@ enum class CustomMsgTypes : uint32_t
     ServerPing,
     MessageAll,
     ServerMessage,
+    Login,
 };
 
 class CustomServer : public olc::net::server_interface<CustomMsgTypes>
@@ -68,6 +69,11 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     msg >> clientID;
                     std::cout << "Pong!, Hi there mr [" << clientID << "] Welcome to my shitty server\n";
                     break;
+                }
+
+                case CustomMsgTypes::Login:
+                {
+                   std::cout << "Logged in";
                 }
 
                         

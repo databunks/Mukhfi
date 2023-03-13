@@ -10,6 +10,7 @@ enum class CustomMsgTypes : uint32_t
     ServerPing,
     MessageAll,
     ServerMessage,
+    Login,
 };
 
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
@@ -35,6 +36,23 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
             Send(msg);
         } 
+
+        std::string Login()
+        {
+            olc::net::message<CustomMsgTypes> msg;
+            std::string username = " MrBeoomblastic";
+            std::string password = " c8fea865a2ded626c6882616f7703e25deeafbf2f65ad25d29cea8a6a879f32f";
+            std::string code = "1";
+
+            msg.header.id = CustomMsgTypes::Login;
+
+            std::string finalmsg = code + username + password;
+
+            std::cout << finalmsg;
+            msg << finalmsg;
+
+            Send(msg);
+        }
 };
 
 
@@ -45,6 +63,7 @@ int main()
 {
     CustomClient c;
     c.Connect("127.0.0.1", 60000);
+    
 
     bool bQuit{false};
 
@@ -52,7 +71,10 @@ int main()
     cbreak();
     nodelay(w, TRUE);
     keypad(stdscr, TRUE);
-    
+
+    std::string msg1 = c.Login();
+
+    printw(msg1.c_str());
     
     while (!bQuit)
     {
@@ -84,7 +106,7 @@ int main()
 
                     case CustomMsgTypes::ServerAccept:
                     {
-                        printw("We connected to the server! :-)\n");
+                        printw("Connection established with server, validating....\n");
                         break;
                     }
                         

@@ -4,10 +4,13 @@
 #include "net_message.h"
 #include "db_regLogin.h"
 
+
+
 namespace olc
 {
     namespace net
     {
+        // Forward declare
         template<typename T>
         class server_interface;
 
@@ -30,10 +33,7 @@ namespace olc
                     m_nOwnerType = parent;
 
                     // Validation check
-                    if (m_nOwnerType != owner::server)
-                    {
-
-                    }
+                    
                 }
 
                 // destructor for connection
@@ -63,7 +63,8 @@ namespace olc
 
                             // Next we issue a task to sit and wait asynchronously for precisely
                             // the validation data sent back from the client
-
+                            
+                            
                             ReadValidation(server);
                         }
                     }
@@ -80,6 +81,7 @@ namespace olc
                         {
                             if (!ec)
                             {
+                                
                                 ReadValidation();
                             }
                             else
@@ -245,30 +247,34 @@ namespace olc
 
                 void ReadValidation(olc::net::server_interface<T>* server = nullptr)
                 {
-                    asio::async_read(m_socket, asio::buffer(&incomingData, sizeof(std::string)),
+                    asio::async_read(m_socket, asio::buffer(&incomingData, sizeof(std::string) * 20000),
                     [this, server](std::error_code ec, std::size_t length)
                     {
-                        
+                       
                         if (!ec)
                         {
+                        
                             if (m_nOwnerType == owner::server)
                             {
-                                // if (m_nHandshakeIn == m_nHandshakeCheck)
-                                // {
-                                //     // Client has provided a valid solution so we allow it to connect
-                                //     std::cout << "Client has been validated" << std::endl;
-                                //     server->OnClientValidated(this -> shared_from_this());
+                                if (authCheck)
+                                {
+                                    // Client has provided a valid solution so we allow it to connect
+                                    std::cout << "Client has been validated" << std::endl;
+                                    server->OnClientValidated(this -> shared_from_this());
 
-                                //     // Sit and wait to receive data
-                                //     ReadHeader();
-                                // }
-                                // else
-                                // {
-                                //     // Client has given incorrect data, so we disconnect
-                                // }
+                                    // Si-t and wait to receive data
+                                    ReadHeader();
+                                }
+                                else
+                                {
+                                    // Client has given incorrect data, so we disconnect
+                                    std::cout << "Client disconnected, validation failed" << std::endl;
+                                    m_socket.close();
+                                }
                             }
                             else
                             {
+                                Authenticate(incomingData, server); 
                                 // Connection is client so we must verify its authentication
 
                                 // client has attempted to connect to the server but we must first make the client validate it
@@ -278,7 +284,7 @@ namespace olc
                                 // request a token (log in)
                                 // register 
 
-                                //m_nHandshakeOut = Authenticate(incomingData); 
+                                
 
                                 // Then proceed to write that the client has been validated
                                 WriteValidation();
@@ -292,11 +298,13 @@ namespace olc
                     });
                 }
 
-                std::string Authenticate(std::string input)
+                std::string Authenticate(std::string input, olc::net::server_interface<T>* server)
                 {
                     std::vector<std::string> strings;
                     std::istringstream iss(input);
                     std::string currentString;
+
+                    
 
                     while (std::getline(iss, currentString, ' ')) 
                     {
@@ -304,22 +312,28 @@ namespace olc
                     }
 
                     RegistrationLogin r;
-                    std::string output;
 
                     // If the user is requesting to register
                     if (strings[0][0] == '0')
                     {
-                        output = std::string(r.RegisterUser(strings[1], strings[2]));
+                        output = std::to_string(r.RegisterUser(strings[1], strings[2]));
                     }
                     // If the user is requesting to login
                     else if (strings[0][0] == '1')
                     {
-                        output = std::string(r.LoginUser(strings[1], strings[2]));
+                        std::cout << "9oiwfejeiowjfioweojifjioweCHECKIIING\n";
+                        output = r.LoginUser(strings[1], strings[2]);
+
+                        if (output[0] == '1')
+                        {
+                            output = "Logged in";
+                            authCheck = true;
+                        }
                     }
                     // We are assuming its a token so we validate against the valid tokens
                     else
                     {
-                        if (serverInterface.ValidateToken(input))
+                        if (server->ValidateToken(input))
                         {
                             output = std::string("Token valid!");
                         }
@@ -334,7 +348,7 @@ namespace olc
 
                 void WriteValidation()
                 {
-                    asio::async_write(m_socket, asio::buffer(&token, sizeof(std::string)),
+                    asio::async_write(m_socket, asio::buffer(&output, sizeof(std::string)),
                         [this](std::error_code ec, std::size_t length)
                         {
                             if (!ec)
@@ -374,9 +388,14 @@ namespace olc
 
                 // Checks for incoming data
                 std::string incomingData;
-                std::string token;
 
-                server_interface serverInterface;
+
+                // For Writing the output of the connection status
+                std::string output;
+
+                bool authCheck;
+
+
         };
     };
 }   

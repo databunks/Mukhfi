@@ -18,10 +18,10 @@ ${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
 	
 
 client: ${CLIENTPATH}lib/client.o
-	$(CXX) ${CLIENTPATH}lib/client.o -o ${CLIENTPATH}bin/clientOutput -lncurses -lpthread
+	$(CXX) ${CLIENTPATH}lib/client.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${CLIENTPATH}bin/clientOutput -lncurses -lpthread
 
 server: ${SERVERPATH}lib/server.o
-	$(CXX) ${SERVERPATH}lib/server.o -o  ${SERVERPATH}bin/serverOutput -lpthread
+	$(CXX) ${SERVERPATH}lib/server.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o   ${SERVERPATH}bin/serverOutput -lpthread
 
 registrationLogin: ${SERVERPATH}lib/registrationLogin.o
 	$(CXX) ${SERVERPATH}lib/registrationLogin.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${SERVERPATH}bin/registrationLoginOutput  
