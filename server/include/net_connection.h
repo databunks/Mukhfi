@@ -54,17 +54,7 @@ namespace olc
                         {
                             id = uid;
 
-                            // client has attempted to connect to the server but we must first make the client validate it
-                            // client has to first validate itself so it must have either:
-                            // a token (logged in)
-                            // request a token (log in)
-                            // register 
-                            WriteValidation();
-
-                            // Next we issue a task to sit and wait asynchronously for precisely
-                            // the validation data sent back from the client
-                            
-                            
+                        
                             ReadValidation(server);
                         }
                     }
@@ -82,7 +72,7 @@ namespace olc
                             if (!ec)
                             {
                                 
-                                ReadValidation();
+                                ReadHeader();
                             }
                             else
                             {
@@ -247,15 +237,19 @@ namespace olc
 
                 void ReadValidation(olc::net::server_interface<T>* server = nullptr)
                 {
-                    asio::async_read(m_socket, asio::buffer(&incomingData, sizeof(std::string) * 20000),
+                    asio::async_read(m_socket, asio::buffer(&incomingData.body.data(), incomingData.body.size()),
                     [this, server](std::error_code ec, std::size_t length)
                     {
                        
                         if (!ec)
                         {
-                        
                             if (m_nOwnerType == owner::server)
                             {
+                                std::cout << "Test1\n";
+                                std::string msg;
+                                msg << incomingData;
+                                Authenticate(incomingData, server); 
+
                                 if (authCheck)
                                 {
                                     // Client has provided a valid solution so we allow it to connect
@@ -274,7 +268,6 @@ namespace olc
                             }
                             else
                             {
-                                Authenticate(incomingData, server); 
                                 // Connection is client so we must verify its authentication
 
                                 // client has attempted to connect to the server but we must first make the client validate it
@@ -287,7 +280,7 @@ namespace olc
                                 
 
                                 // Then proceed to write that the client has been validated
-                                WriteValidation();
+                               // WriteValidation();
                             }
                         }
                         else
@@ -300,10 +293,15 @@ namespace olc
 
                 std::string Authenticate(std::string input, olc::net::server_interface<T>* server)
                 {
+                    std::cout << input;
+                    std::cout << "Reached here 1\n";
                     std::vector<std::string> strings;
+                    std::cout << "Reached here 2\n";
                     std::istringstream iss(input);
+                    std::cout << "Reached here 3\n";
                     std::string currentString;
 
+                   
                     
 
                     while (std::getline(iss, currentString, ' ')) 
@@ -312,6 +310,8 @@ namespace olc
                     }
 
                     RegistrationLogin r;
+
+                    std::cout << "Reached here 2\n";
 
                     // If the user is requesting to register
                     if (strings[0][0] == '0')
@@ -342,6 +342,8 @@ namespace olc
                             output = std::string("Token Invalid!");
                         }
                     }
+
+                    std::cout << "Reached here 3\n";
 
                     return output;
                 }
@@ -387,7 +389,7 @@ namespace olc
                 uint32_t id = 0; // allocate identifiers to clients
 
                 // Checks for incoming data
-                std::string incomingData;
+                message<T> incomingData;
 
 
                 // For Writing the output of the connection status
