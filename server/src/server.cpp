@@ -1,5 +1,8 @@
 #include <iostream>
 #include <olc_net.h>
+#include <db_regLogin.h>
+
+
 
 enum class CustomMsgTypes : uint32_t
 {
@@ -51,16 +54,6 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     client->Send(msg);
                     break;
                 }
-
-                case CustomMsgTypes::MessageAll:
-                {
-                    std::cout << "[" << client -> GetID() << "] wants to say hello to everyone\n";
-                    olc::net::message<CustomMsgTypes> msg;
-                    msg.header.id = CustomMsgTypes::ServerMessage;
-                    msg << client -> GetID();
-                    MessageAllClients(msg, client);
-                    break;
-                }
                         
 
                 case CustomMsgTypes::ServerMessage:
@@ -73,10 +66,31 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
                 case CustomMsgTypes::Login:
                 {
-                   std::cout << "Logged in";
-                }
+                   std::cout << "Received login request";
+                   char* loginDetails;
 
-                        
+                   msg >> loginDetails;
+
+                   std::cout << loginDetails;
+
+                //   std::string loginDetailsStr{loginDetails};
+
+                //    std::string username{loginDetailsStr.substr(0, loginDetailsStr.find(" "))};
+
+                //    std::string password{loginDetailsStr.substr(loginDetailsStr.find(" ") + 1, loginDetailsStr.length())};
+
+                //    RegistrationLogin r;
+
+                //    std::string loginRes{r.LoginUser(username, password)}; 
+
+                //    olc::net::message<CustomMsgTypes> msg;
+                //    msg.header.id = CustomMsgTypes::Login;
+                //    msg << loginRes;
+
+                   client->Send(msg);
+                    break;
+
+                }
 
                     
             }

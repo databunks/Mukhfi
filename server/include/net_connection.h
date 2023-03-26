@@ -2,7 +2,6 @@
 #include "net_common.h"
 #include "net_tsqueue.h"
 #include "net_message.h"
-#include "db_regLogin.h"
 
 
 
@@ -54,8 +53,9 @@ namespace olc
                         {
                             id = uid;
 
+                            ReadHeader();
                         
-                            ReadValidation(server);
+                            //ReadValidation(server);
                         }
                     }
                 }
@@ -235,139 +235,139 @@ namespace olc
                     ReadHeader();
                 }
 
-                void ReadValidation(olc::net::server_interface<T>* server = nullptr)
-                {
-                    asio::async_read(m_socket, asio::buffer(&incomingData.body.data(), incomingData.body.size()),
-                    [this, server](std::error_code ec, std::size_t length)
-                    {
+                // void ReadValidation(olc::net::server_interface<T>* server = nullptr)
+                // {
+                //     asio::async_read(m_socket, asio::buffer(&incomingData, incomingData.size()),
+                //     [this, server](std::error_code ec, std::size_t length)
+                //     {
                        
-                        if (!ec)
-                        {
-                            if (m_nOwnerType == owner::server)
-                            {
-                                std::cout << "Test1\n";
-                                std::string msg;
-                                msg << incomingData;
-                                Authenticate(incomingData, server); 
+                //         if (!ec)
+                //         {
+                //             if (m_nOwnerType == owner::server)
+                //             {
+                //                 std::cout << "Incoming data: " << incomingData << "\n";
+                
+                //                 Authenticate(incomingData, server); 
 
-                                if (authCheck)
-                                {
-                                    // Client has provided a valid solution so we allow it to connect
-                                    std::cout << "Client has been validated" << std::endl;
-                                    server->OnClientValidated(this -> shared_from_this());
+                //                 if (authCheck)
+                //                 {
+                //                     // Client has provided a valid solution so we allow it to connect
+                //                     std::cout << "Client has been validated" << std::endl;
+                //                     server->OnClientValidated(this -> shared_from_this());
 
-                                    // Si-t and wait to receive data
-                                    ReadHeader();
-                                }
-                                else
-                                {
-                                    // Client has given incorrect data, so we disconnect
-                                    std::cout << "Client disconnected, validation failed" << std::endl;
-                                    m_socket.close();
-                                }
-                            }
-                            else
-                            {
-                                // Connection is client so we must verify its authentication
+                //                     // Si-t and wait to receive data
+                //                     ReadHeader();
+                //                 }
+                //                 else
+                //                 {
+                //                     // Client has given incorrect data, so we disconnect
+                //                     std::cout << "Client disconnected, validation failed" << std::endl;
+                //                     m_socket.close();
+                //                 }
+                //             }
+                //             else
+                //             {
+                //                 std::cout << "Incoming data: " << incomingData << "\n";
+                //                 // Connection is client so we must verify its authentication
 
-                                // client has attempted to connect to the server but we must first make the client validate it
-                                // client has to first validate itself so it must have either:
+                //                 // client has attempted to connect to the server but we must first make the client validate it
+                //                 // client has to first validate itself so it must have either:
                                 
-                                // a token (logged in)
-                                // request a token (log in)
-                                // register 
+                //                 // a token (logged in)
+                //                 // request a token (log in)
+                //                 // register 
 
                                 
 
-                                // Then proceed to write that the client has been validated
-                               // WriteValidation();
-                            }
-                        }
-                        else
-                        {
-                            std::cerr << "[ERROR] Client Disconnected (ReadValidation)" << std::endl;
-                            m_socket.close();
-                        }
-                    });
-                }
+                //                 // Then proceed to write that the client has been validated
+                //                // WriteValidation();
+                //             }
+                //         }
+                //         else
+                //         {
+                //             std::cerr << "[ERROR] Client Disconnected (ReadValidation)" << std::endl;
+                //             m_socket.close();
+                //         }
+                //     });
+                // }
 
-                std::string Authenticate(std::string input, olc::net::server_interface<T>* server)
-                {
-                    std::cout << input;
-                    std::cout << "Reached here 1\n";
-                    std::vector<std::string> strings;
-                    std::cout << "Reached here 2\n";
-                    std::istringstream iss(input);
-                    std::cout << "Reached here 3\n";
-                    std::string currentString;
+                // std::string Authenticate(std::string input, olc::net::server_interface<T>* server)
+                // {
+                //     std::cout << input;
+                //     std::cout << "Reached here 1\n";
+                //     std::vector<std::string> strings;
+                //     std::cout << "Reached here 2\n";
+                //     std::istringstream iss(input);
+                //     std::cout << "Reached here 3\n";
+                //     std::string currentString;
 
                    
                     
 
-                    while (std::getline(iss, currentString, ' ')) 
-                    {
-                        strings.push_back(currentString);
-                    }
+                //     while (std::getline(iss, currentString, ' ')) 
+                //     {
+                //         strings.push_back(currentString);
+                //     }
 
-                    RegistrationLogin r;
+                //     RegistrationLogin r;
 
-                    std::cout << "Reached here 2\n";
+                //     std::cout << "Reached here 2\n";
 
-                    // If the user is requesting to register
-                    if (strings[0][0] == '0')
-                    {
-                        output = std::to_string(r.RegisterUser(strings[1], strings[2]));
-                    }
-                    // If the user is requesting to login
-                    else if (strings[0][0] == '1')
-                    {
-                        std::cout << "9oiwfejeiowjfioweojifjioweCHECKIIING\n";
-                        output = r.LoginUser(strings[1], strings[2]);
+                //     // If the user is requesting to register
+                //     if (strings[0][0] == '0')
+                //     {
+                //         output = std::to_string(r.RegisterUser(strings[1], strings[2]));
+                //     }
+                //     // If the user is requesting to login
+                //     else if (strings[0][0] == '1')
+                //     {
+                //         std::cout << "9oiwfejeiowjfioweojifjioweCHECKIIING\n";
+                //         output = r.LoginUser(strings[1], strings[2]);
 
-                        if (output[0] == '1')
-                        {
-                            output = "Logged in";
-                            authCheck = true;
-                        }
-                    }
-                    // We are assuming its a token so we validate against the valid tokens
-                    else
-                    {
-                        if (server->ValidateToken(input))
-                        {
-                            output = std::string("Token valid!");
-                        }
-                        else 
-                        {
-                            output = std::string("Token Invalid!");
-                        }
-                    }
+                //         if (output[0] == '1')
+                //         {
+                //             output = "Logged in";
+                //             authCheck = true;
+                //         }
+                //     }
+                //     // We are assuming its a token so we validate against the valid tokens
+                //     else
+                //     {
+                //         if (server->ValidateToken(input))
+                //         {
+                //             output = std::string("Token valid!");
+                //         }
+                //         else 
+                //         {
+                //             output = std::string("Token Invalid!");
+                //         }
+                //     }
 
-                    std::cout << "Reached here 3\n";
+                //     std::cout << "Reached here 3\n";
 
-                    return output;
-                }
+                //     return output;
+                // }
 
-                void WriteValidation()
-                {
-                    asio::async_write(m_socket, asio::buffer(&output, sizeof(std::string)),
-                        [this](std::error_code ec, std::size_t length)
-                        {
-                            if (!ec)
-                            {
-                                // Validation data sent, clients now wait for a response
-                                // for a response (or a closure)
-                                if (m_nOwnerType == owner::client)
-                                {
-                                    ReadHeader();
-                                }
-                                else
-                                {
-                                    m_socket.close();
-                                }
-                            }
-                        });
-                }        
+                // void WriteValidation()
+                // {
+                //     asio::async_write(m_socket, asio::buffer(&output, sizeof(std::string)),
+                //         [this](std::error_code ec, std::size_t length)
+                //         {
+                //             if (!ec)
+                //             {
+                //                 // Validation data sent, clients now wait for a response
+                //                 // for a response (or a closure)
+                //                 if (m_nOwnerType == owner::client)
+                //                 {
+                //                     ReadHeader();
+                //                 }
+                //                 else
+                //                 {
+                //                     m_socket.close();
+                //                 }
+                //             }
+                //         });
+                // }        
 
             protected:
                 // Each connection has a unique socket to a remote
@@ -389,7 +389,7 @@ namespace olc
                 uint32_t id = 0; // allocate identifiers to clients
 
                 // Checks for incoming data
-                message<T> incomingData;
+                std::string incomingData;
 
 
                 // For Writing the output of the connection status
