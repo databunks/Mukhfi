@@ -110,7 +110,6 @@ class HelperFunctions
             // Checking password is sha256 hash
             if ( (passwordLen != 64) | (!std::regex_match(password, alnum)) )
             {
-                std::cout << "Test";
                 return RegistrationLoginCodes::PasswordNotHashed;
             }
             

@@ -16,6 +16,8 @@ enum class CustomMsgTypes : uint32_t
 
 class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 {
+    RegistrationLogin r;
+
     public:
         // The : thing is just inherting from the server_interface class
         CustomServer(uint16_t nPort) : olc::net::server_interface<CustomMsgTypes>(nPort)
@@ -66,26 +68,30 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
                 case CustomMsgTypes::Login:
                 {
-                   std::cout << "Received login request";
-                   char* loginDetails;
+                   std::cout << "Received login request\n";
+                   char loginDetails[200];
 
                    msg >> loginDetails;
 
-                   std::cout << loginDetails;
+                   std::string loginDetailsStr{loginDetails};
 
-                //   std::string loginDetailsStr{loginDetails};
+                   std::string username{loginDetailsStr.substr(0, loginDetailsStr.find(" "))};
 
-                //    std::string username{loginDetailsStr.substr(0, loginDetailsStr.find(" "))};
+                   std::string password{loginDetailsStr.substr(loginDetailsStr.find(" ") + 1, loginDetailsStr.length())};
 
-                //    std::string password{loginDetailsStr.substr(loginDetailsStr.find(" ") + 1, loginDetailsStr.length())};
+                   std::string loginRes{r.LoginUser(username, password)}; 
 
-                //    RegistrationLogin r;
+                   olc::net::message<CustomMsgTypes> msg;
+                   msg.header.id = CustomMsgTypes::Login;
 
-                //    std::string loginRes{r.LoginUser(username, password)}; 
+                   char msgToSend[200];
 
-                //    olc::net::message<CustomMsgTypes> msg;
-                //    msg.header.id = CustomMsgTypes::Login;
-                //    msg << loginRes;
+                   for (int i = 0; i < loginRes.size(); i++)
+                   {
+                        msgToSend[i] = loginRes[i];
+                   }
+
+                   msg << msgToSend;
 
                    client->Send(msg);
                     break;

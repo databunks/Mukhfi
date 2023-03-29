@@ -27,6 +27,7 @@ class RegistrationLogin
         
 
     public:
+    
     // Logging in the user 
         std::string LoginUser(std::string username, std::string password)
         {

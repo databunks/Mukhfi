@@ -16,28 +16,40 @@ enum class CustomMsgTypes : uint32_t
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     private:
+
         std::string getstring()
         {
             std::string input;
 
-            // // let the terminal do the line editing
-            // nocbreak();
-            // echo();
+            char inputChar[200];
+            refresh();
+             // int currentChar = getch();
 
-            // this reads from buffer after <ENTER>, not "raw" 
-            // so any backspacing etc. has already been taken care of
-            int ch = getch();
+            // while (currentChar != '\n')
+            // {
+            //     currentChar = getch();
+            // }
+            getstr(inputChar);
 
-            while ( ch != '\n' )
-            {
-                input.push_back( ch );
-                ch = getch();
-            }
+            // int currentChar = getch();
 
-            // restore your cbreak / echo settings here
+            // while (currentChar != '\n')
+            // {
+            //     currentChar = getch();
+            // }
+
+            // printw("You entered: \n");
+
+            // for (int i = 0; i < 100; i++)
+            // {
+            //     //printw("%c", line[i]);
+            // }
+
+            printw("Input: %s\n", inputChar);
 
             return input;
         }
+
 
     public:
 
@@ -61,27 +73,41 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             Send(msg);
         } 
 
+        void SendMessageToServer(std::string message, CustomMsgTypes type)
+        {
+            char messageToSend[200];
+
+            for (int i = 0; i < 200; i++)
+            {
+                messageToSend[i] = NULL;
+            }
+
+            for (int i = 0; i < message.size(); i++)
+            {
+                messageToSend[i] = message[i];
+            }
+
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = type;
+
+            msg << messageToSend;
+
+            Send(msg);
+        }
+
         void Login()
         {
             printw("Enter Username:\n");  
-            std::string username;
-            std::cin >> username;
+            std::string username = getstring();
 
-            printw("Enter Password: ");
-            std::string password;
-            std::cin >> password;
+            printw("Enter Password:\n");
+            std::string password = getstring();
 
             std::string fullMessage;
             fullMessage = username + " " + password;
+            
 
-            olc::net::message<CustomMsgTypes> msg;
-            msg.header.id = CustomMsgTypes::Login;
-
-            std::cout << fullMessage;
-
-            msg << fullMessage.c_str();
-
-            Send(msg);
+            SendMessageToServer(username, CustomMsgTypes::Login);
         }
 
        
@@ -105,6 +131,7 @@ int main()
 
     WINDOW *w = initscr();
     cbreak();
+    echo();
     nodelay(w, TRUE);
     keypad(stdscr, TRUE);
     
@@ -164,11 +191,16 @@ int main()
 
                     case CustomMsgTypes::Login:
                     {
-                        char* res;
+                        char res[200];
                         msg >> res;
                         // std::cout << res;
 
-                        printw("Aye sir\n");
+                        printw("Aye sir \n");
+
+                        for (int i = 0; i < strlen(res); i++)
+                        {
+                            printw("%c",res[i]);
+                        }
                         //printw("%s", res);
                         break;
                     }
