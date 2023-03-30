@@ -11,11 +11,14 @@ enum class CustomMsgTypes : uint32_t
     MessageAll,
     ServerMessage,
     Login,
+    InitiateConversation,
+    Register,
 };
 
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     private:
+        
 
         std::string getstring()
         {
@@ -36,7 +39,6 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             // while (currentChar != '\n')
             // {
             //     currentChar = getch();
-            // }
 
             // printw("You entered: \n");
 
@@ -52,14 +54,8 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
 
     public:
-
-        void MessageEveryone()
-        {
-            olc::net::message<CustomMsgTypes> msg;
-            msg.header.id = CustomMsgTypes::MessageAll;
-            Send(msg);
-        }
-
+        std::string currentToken;
+        
         void PingServer()
         {
             olc::net::message<CustomMsgTypes> msg;
@@ -98,16 +94,58 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
         void Login()
         {
             printw("Enter Username:\n");  
-            std::string username = getstring();
+            std::string username; //= getstring();
+            std::cin >> username;
 
             printw("Enter Password:\n");
-            std::string password = getstring();
+            std::string password; //= getstring();
+            std::cin >> password;
+
 
             std::string fullMessage;
             fullMessage = username + " " + password;
             
 
-            SendMessageToServer(username, CustomMsgTypes::Login);
+            SendMessageToServer(fullMessage, CustomMsgTypes::Login);
+        }
+
+        void Register()
+        {
+            printw("Enter Username:\n");  
+            std::string username; //= getstring();
+            std::cin >> username;
+
+            printw("Enter Password:\n");
+            std::string password; //= getstring();
+            std::cin >> password;
+
+
+            std::string fullMessage;
+            fullMessage = username + " " + password;
+
+            std::cout << fullMessage;
+            
+
+            SendMessageToServer(fullMessage, CustomMsgTypes::Register);
+        }
+
+        void InitiateConversation(std::string currentToken)
+        {
+            if (currentToken.size() < 1)
+            {
+                printw("You are not logged in!\n");
+                return;
+            }
+            
+            printw("Enter Username:\n");  
+            std::string username; //= getstring();
+            std::cin >> username;
+
+            std::string fullMsg;
+
+            fullMsg = currentToken + "!" + username;
+
+            SendMessageToServer(username, CustomMsgTypes::InitiateConversation);
         }
 
        
@@ -129,6 +167,8 @@ int main()
 
     bool bQuit{false};
 
+    std::string currentToken;
+
     WINDOW *w = initscr();
     cbreak();
     echo();
@@ -141,23 +181,27 @@ int main()
 
         switch (ch)
         {
-            case KEY_LEFT:
+            case KEY_UP:
             {
                 c.PingServer();
                 break;
             }
-                
-            
-            case KEY_UP:
+
+            case KEY_DOWN:
             {
-                c.MessageEveryone();
+                c.InitiateConversation(currentToken);
                 break;
             }
-                
-
+            
             case KEY_RIGHT:
             {
                 c.Login();
+                break;
+            }
+
+            case KEY_LEFT:
+            {
+                c.Register();
                 break;
             }
         }
@@ -193,15 +237,31 @@ int main()
                     {
                         char res[200];
                         msg >> res;
-                        // std::cout << res;
 
-                        printw("Aye sir \n");
-
-                        for (int i = 0; i < strlen(res); i++)
+                        if (strlen(res) >= 54)
                         {
-                            printw("%c",res[i]);
+                            currentToken = res;
                         }
-                        //printw("%s", res);
+        
+                        printw("%s", res);
+                        break;
+                    }
+
+                    case CustomMsgTypes::Register:
+                    {
+                        char res[200];
+                        msg >> res;
+
+                        printw("%s", res);
+                        break;
+                    }
+
+                    case CustomMsgTypes::InitiateConversation:
+                    {
+                        char res[200];
+                        msg >> res;
+
+                        printw("%s", res);
                         break;
                     }
                                 

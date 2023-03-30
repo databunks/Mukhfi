@@ -65,7 +65,7 @@ class HelperFunctions
         char token[lenToken];
         for (int i = 0; i < lenToken; i++)
         {
-            token[i] = (char)(r() % (127 - 33) + 33);
+            token[i] = (char)(r() % (127 - 34) + 34);
         }
         return std::string(token);
 

@@ -44,7 +44,28 @@ namespace olc
                     return id;
                 }
 
+                std::string GetUsername()
+                {
+                    return clientUsername;
+                }
+
+                std::string GetToken()
+                {
+                    return currentToken;
+                }
+
             public:
+
+                void SetUsername(std::string username)
+                {
+                    clientUsername = username;
+                }
+
+                void SetCurrentToken(std::string token)
+                {
+                    currentToken = token;
+                }
+               
                 void ConnectToClient(olc::net::server_interface<T>* server, uint32_t uid = 0)
                 {
                     if (m_nOwnerType == owner::server)
@@ -388,15 +409,8 @@ namespace olc
                 owner m_nOwnerType = owner::server;
                 uint32_t id = 0; // allocate identifiers to clients
 
-                // Checks for incoming data
-                std::string incomingData;
-
-
-                // For Writing the output of the connection status
-                std::string output;
-
-                bool authCheck;
-
+                std::string clientUsername;
+                std::string currentToken;
 
         };
     };
