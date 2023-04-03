@@ -18,40 +18,35 @@ enum class CustomMsgTypes : uint32_t
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     private:
-        
 
-        std::string getstring()
+    std::string getstring()
+    {
+        int currentPressedChar = getch();
+
+        while (currentPressedChar != '\n' )
         {
-            std::string input;
-
-            char inputChar[200];
-            refresh();
-             // int currentChar = getch();
-
-            // while (currentChar != '\n')
-            // {
-            //     currentChar = getch();
-            // }
-            getstr(inputChar);
-
-            // int currentChar = getch();
-
-            // while (currentChar != '\n')
-            // {
-            //     currentChar = getch();
-
-            // printw("You entered: \n");
-
-            // for (int i = 0; i < 100; i++)
-            // {
-            //     //printw("%c", line[i]);
-            // }
-
-            printw("Input: %s\n", inputChar);
-
-            return input;
+            currentPressedChar = getch();
         }
 
+        move(LINES - 1, 0);
+        int y, x;
+        getyx(stdscr, y, x);
+
+        std::string input{};
+
+        for (int i = 0; i < x; i++)
+        {
+            move(y, i);
+            char currentChar = inch();
+            input += currentChar;
+        }
+
+        printw("This: %s", input.c_str());
+        move(LINES - 1, 0);
+        clrtoeol();
+
+        return input;
+    }
 
     public:
         std::string currentToken;
@@ -94,12 +89,12 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
         void Login()
         {
             printw("Enter Username:\n");  
-            std::string username; //= getstring();
-            std::cin >> username;
+            std::string username = getstring();
+            //std::cin >> username;
 
             printw("Enter Password:\n");
-            std::string password; //= getstring();
-            std::cin >> password;
+            std::string password; // = getstring();
+            //std::cin >> password;
 
 
             std::string fullMessage;
@@ -174,38 +169,52 @@ int main()
     echo();
     nodelay(w, TRUE);
     keypad(stdscr, TRUE);
-    
+    move(LINES - 1, 0);
+
+
     while (!bQuit)
     {
         int ch = getch();
+        
 
         switch (ch)
         {
-            case KEY_UP:
-            {
-                c.PingServer();
-                break;
-            }
-
-            case KEY_DOWN:
-            {
-                c.InitiateConversation(currentToken);
-                break;
-            }
             
-            case KEY_RIGHT:
+            case KEY_BACKSPACE:
             {
-                c.Login();
+                printw(" ");
+
+                int y, x;
+                getyx(stdscr, y, x);
+
+                if (x > 0)
+                move(y, x - 1);
+
                 break;
             }
 
-            case KEY_LEFT:
+            case '\n':
             {
-                c.Register();
-                break;
+                move(LINES - 1, 0);
+
+                int y, x;
+                getyx(stdscr, y, x);
+
+                std::string input{};
+
+                for (int i = 0; i < x; i++)
+                {
+                    move(y, i);
+                    char currentChar = inch();
+                    input += currentChar;
+                }
+
+                move(LINES - 1, 0);
+                clrtoeol();
+
+                printw("This: %s", input.c_str());
             }
         }
-
 
         if (c.IsConnected())
         {
@@ -219,7 +228,9 @@ int main()
 
                     case CustomMsgTypes::ServerAccept:
                     {
-                        printw("Connection established with server, validating....\n");
+                        move(0,0);
+                        printw("Connection established with server! \n");
+                        move(LINES - 1, 0);
                         break;
                     }
                         
@@ -275,5 +286,7 @@ int main()
             bQuit = true;
         }
     }
+
+    endwin();
     return 0;   
 }
