@@ -28,6 +28,8 @@ int conversationLineCount = 0;
 int currentConversatorID = 0;
 
 
+
+
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
@@ -307,6 +309,14 @@ int main()
     keypad(stdscr, TRUE);
     move(LINES - 1, 0);
 
+    start_color();
+
+    // Define colors
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+    init_pair(3, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(4, COLOR_WHITE, COLOR_BLACK);
+
 
     while (!bQuit)
     {
@@ -461,7 +471,10 @@ int main()
 
                         conversationLineCount++;
                         move(conversationLineCount, 0);
-                        printw("%s: %s", currentLoggedInUser.c_str(), res);
+                        attron(COLOR_PAIR(1));
+                        printw("%s: ", currentLoggedInUser.c_str());
+                        attron(COLOR_PAIR(4));
+                        printw("%s", res);
                         move(LINES - 1, 0);
                         break;
                     }
@@ -471,8 +484,11 @@ int main()
                         char res[5000];
                         msg >> res;
                         conversationLineCount++;
+                        attron(COLOR_PAIR(2));
                         move(conversationLineCount, 0);
-                        printw("%s: %s", currentConverser.c_str(), res);
+                        printw("%s: ", currentConverser.c_str());
+                        attron(COLOR_PAIR(4));
+                        printw("%s", res);
                         move(LINES - 1, 0);
                         break;
                     }
