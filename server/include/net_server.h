@@ -217,48 +217,9 @@ namespace olc
             // Clients will be identified in the wider system via an ID
             uint32_t nIDCounter = 10000;
 
+        
+
         public:
-
-        void AddToken(std::string token)
-        {
-            tokens.insert({token, std::chrono::system_clock::now()});
-        }
-
-        bool ValidateToken(std::string token)
-        {
-            auto it = tokens.find(token);
-
-            if (it != tokens.end()) 
-            {
-                // Get the current time point
-                std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-
-                // Compare the two time points
-                if (it->second > (now + std::chrono::seconds(300))) 
-                {
-                    tokens.erase(token);
-                    std::cout << "[INFO] Token expired";
-                    return false;
-                } 
-                else 
-                {
-                    std::cout << "[INFO] Valid token";
-                    return true;
-                }
-            } 
-            else 
-            {
-                std::cout << "[INFO] Invalid token" << std::endl;
-                return false;
-            }
-
-            
-        }
-
-        private:
-
-            // Each token will have a timestamp associated with it so we can set expiry
-            std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
 
             // void RemoveToken(std::vector<std::string> &tokens, std::string token)
             // {

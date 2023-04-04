@@ -25,6 +25,11 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
 
+        bool StartsWith(const std::string& str, const std::string& prefix)
+        {
+            return str.substr(0, prefix.size()) == prefix;
+        }
+
         void CommitBackspace()
         {
             printw(" ");
@@ -188,21 +193,28 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
         void InitiateConversation(std::string currentToken)
         {
+            commandMode = false;
             if (currentToken.size() < 1)
             {
                 printw("You are not logged in!\n");
                 return;
             }
-            
+
+            move(0,0);
+            erase();
             printw("Enter Username:\n");  
-            std::string username; //= getstring();
-            std::cin >> username;
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            std::string username = input;
+            erase();
+            move(LINES - 1, 0);
 
             std::string fullMsg;
 
             fullMsg = currentToken + "!" + username;
 
-            SendMessageToServer(username, CustomMsgTypes::InitiateConversation);
+            SendMessageToServer(fullMsg, CustomMsgTypes::InitiateConversation);
+            commandMode = true;
         }
 
        
@@ -254,23 +266,23 @@ int main()
                 c.CaptureInput();
                 if (commandMode)
                 {
-                    if (input == "login")
+                    if (input == "/login")
                     {
                         c.Login();
                     }
-                    else if (input == "register")
+                    else if (input == "/register")
                     {
                         c.Register();
                     }
-                    else if (input == "initiate")
+                    else if (c.StartsWith(input, "/talkto"))
                     {
-                        c.InitiateConversation(c.currentToken);
+                        c.InitiateConversation(currentToken);
                     }
-                    else if (input == "ping")
+                    else if (input == "/ping")
                     {
                         c.PingServer();
                     }
-                    else if (input == "quit")
+                    else if (input == "/quit")
                     {
                         bQuit = true;
                     }
@@ -318,10 +330,21 @@ int main()
 
                         if (strlen(res) >= 54)
                         {
-                            currentToken = res;
+                            currentToken = "";
+
+                            for (int i = 0; i < strlen(res); i++)
+                            {
+                                currentToken += res[i];
+                            }
+
+                            printw("Logged in!");
+                        }
+                        else
+                        {
+                            printw("%s", res);
                         }
         
-                        printw("%s", res);
+                        
                         break;
                     }
 
@@ -339,7 +362,14 @@ int main()
                         char res[200];
                         msg >> res;
 
-                        printw("%s", res);
+                        if (std::stoi(res))
+                        {
+                            printw("Connected to user with client id: %s", res);
+                        }
+                        else
+                        {
+                            printw("Failed to connect to user, are they offline?");
+                        }
                         break;
                     }
                                 

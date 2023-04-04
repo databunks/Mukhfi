@@ -20,6 +20,9 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 {
     RegistrationLogin r;
 
+    // Each token will have a timestamp associated with it so we can set expiry
+    std::unordered_map<std::string, std::chrono::system_clock::time_point> tokens;
+
     public:
         // The : thing is just inherting from the server_interface class
         CustomServer(uint16_t nPort) : olc::net::server_interface<CustomMsgTypes>(nPort)
@@ -48,10 +51,11 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
         {
             std::string token = fullMsg.substr(0, fullMsg.find("!"));
 
-            if (!ValidateToken(fullMsg))
+            if (!ValidateToken(token))
             {
                 return std::string{"Invalid Token / Token Expired"};
             }
+
             
             return fullMsg.substr(fullMsg.find("!") + 1, fullMsg.length());
         }
@@ -82,22 +86,22 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
                 case CustomMsgTypes::InitiateConversation:
                 {
-                    char charMsg[200];
-                    msg >> charMsg;
+                    char incomingMsg[200];
+                    msg >> incomingMsg;
 
-                    std::string validationMsg = ValidateTokenAndSplitMessage(std::string{charMsg});
+                    std::string validationMsg = ValidateTokenAndSplitMessage(std::string{incomingMsg});
                     char outwardMsg[200];
+
+                    olc::net::message<CustomMsgTypes> msg;
+                    msg.header.id = CustomMsgTypes::InitiateConversation;
 
 
                     if (validationMsg == "Invalid Token / Token Expired")
                     {
                         std::string InvalidTokenMsg{"Invalid Token / Token Expired"};
                         strcpy(outwardMsg, InvalidTokenMsg.c_str());
-
-                        olc::net::message<CustomMsgTypes> msg;
-                        msg.header.id = CustomMsgTypes::InitiateConversation;
                         msg << outwardMsg;
-
+                        client->Send(msg);
                         break;
                     }
 
@@ -108,6 +112,7 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     
 
                     bool usernameFound = false;
+
                     for (auto connection : m_deqConnections)
                     {
                         if (connection->GetUsername() == std::string(username))
@@ -122,8 +127,6 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                             outwardMsg[id.size()] = '\0';
 
                             usernameFound = true;
-                            olc::net::message<CustomMsgTypes> msg;
-                            msg.header.id = CustomMsgTypes::InitiateConversation;
                             msg << outwardMsg;
                             break;
                         }
@@ -133,7 +136,11 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     {
                        std::string failedToFindUsernameMsg{"Failed to find username"};
                        strcpy(outwardMsg, failedToFindUsernameMsg.c_str());
+                       msg << outwardMsg;
                     }
+
+                    client->Send(msg);
+                    break;
                 }
 
                 case CustomMsgTypes::Register:
@@ -185,7 +192,7 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
                    std::string loginRes{r.LoginUser(username, password)}; 
 
-                   if (loginRes == "1")
+                   if (loginRes.length() > 64)
                    {
                         client->SetUsername(username);
                         client->SetCurrentToken(loginRes);
@@ -213,6 +220,43 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
                     
             }
+        }
+
+        private:
+        void AddToken(std::string token)
+        {
+            tokens.insert({token, std::chrono::system_clock::now()});
+        }
+
+        bool ValidateToken(std::string token)
+        {
+            auto it = tokens.find(token);
+
+            if (it != tokens.end()) 
+            {
+                // Get the current time point
+                std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+
+                // Compare the two time points
+                if (it->second > (now + std::chrono::seconds(300))) 
+                {
+                    tokens.erase(token);
+                    std::cout << "[INFO] Token expired";
+                    return false;
+                } 
+                else 
+                {
+                    std::cout << "[INFO] Valid token";
+                    return true;
+                }
+            } 
+            else 
+            {
+                std::cout << "[INFO] Invalid token" << std::endl;
+                return false;
+            }
+
+            
         }
 };
 
