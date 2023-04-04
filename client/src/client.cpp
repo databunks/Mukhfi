@@ -18,6 +18,7 @@ enum class CustomMsgTypes : uint32_t
     Register,
     SendMessageToUser,
     ReceiveMessageFromUser,
+    DisconnectClient,
 };
 
 
@@ -85,6 +86,13 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
         bool StartsWith(const std::string& str, const std::string& prefix)
         {
             return str.substr(0, prefix.size()) == prefix;
+        }
+
+        void Disconnect()
+        {
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = CustomMsgTypes::DisconnectClient;
+            Send(msg);
         }
 
         void CommitBackspace()
@@ -438,6 +446,7 @@ int main()
                 }
                 else
                 {
+                    c.Disconnect();
                     bQuit = true;
                 }
             }

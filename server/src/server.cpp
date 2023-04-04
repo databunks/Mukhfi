@@ -16,6 +16,7 @@ enum class CustomMsgTypes : uint32_t
     Register,
     SendMessageToUser,
     ReceiveMessageFromUser,
+    DisconnectClient,
 };
 
 class CustomServer : public olc::net::server_interface<CustomMsgTypes>
@@ -134,6 +135,13 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     msg << msgToSend;
 
                     client->Send(msg);
+                    break;
+                }
+
+                case CustomMsgTypes::DisconnectClient:
+                {
+                    client->Disconnect();
+                    std::cout << "Disconnecting client: [" << client->GetID() << "]\n";
                     break;
                 }
 
