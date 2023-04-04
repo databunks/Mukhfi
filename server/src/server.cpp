@@ -14,6 +14,8 @@ enum class CustomMsgTypes : uint32_t
     Login,
     InitiateConversation,
     Register,
+    SendMessageToUser,
+    ReceiveMessageFromUser,
 };
 
 class CustomServer : public olc::net::server_interface<CustomMsgTypes>
@@ -49,7 +51,7 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
 
         std::string ValidateTokenAndSplitMessage(std::string fullMsg)
         {
-            std::string token = fullMsg.substr(0, fullMsg.find("!"));
+            std::string token = fullMsg.substr(0, fullMsg.find("¬"));
 
             if (!ValidateToken(token))
             {
@@ -57,7 +59,7 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
             }
 
             
-            return fullMsg.substr(fullMsg.find("!") + 1, fullMsg.length());
+            return fullMsg.substr(fullMsg.find("¬") + 2, fullMsg.length());
         }
 
         // Called when a message arrives
@@ -81,6 +83,57 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     uint32_t clientID;
                     msg >> clientID;
                     std::cout << "Pong!, Hi there mr [" << clientID << "] Welcome to my shitty server\n";
+                    break;
+                }
+
+                case CustomMsgTypes::SendMessageToUser:
+                {
+                    char incomingMsg[5000];
+                    msg >> incomingMsg;
+                    
+                    std::string validationMsg = ValidateTokenAndSplitMessage(std::string{incomingMsg});
+                    
+                    int receivingClientID = std::stoi(validationMsg.substr(0, validationMsg.find("¬")));
+                    std::string messageToSendToClient = validationMsg.substr(validationMsg.find("¬") + 2, validationMsg.length());
+
+                    for (auto connection : m_deqConnections)
+                    {
+                        if (connection -> GetID() == receivingClientID)
+                        {
+                            olc::net::message<CustomMsgTypes> msg;
+                            msg.header.id = CustomMsgTypes::ReceiveMessageFromUser;
+
+                            char msgToSend[5000];
+
+                            for (int i = 0; i < messageToSendToClient.size(); i++)
+                            {
+                                msgToSend[i] = messageToSendToClient[i];
+                            }
+
+                            msgToSend[messageToSendToClient.size()] = '\0';
+
+                            msg << msgToSend;
+                            std::cout << msgToSend << std::endl;
+                            connection -> Send(msg);
+                            break;
+                        }
+                    }
+
+                    olc::net::message<CustomMsgTypes> msg;
+                    msg.header.id = CustomMsgTypes::SendMessageToUser;
+
+                    char msgToSend[5000];
+
+                    for (int i = 0; i < messageToSendToClient.size(); i++)
+                    {
+                        msgToSend[i] = messageToSendToClient[i];
+                    }
+
+                    msgToSend[messageToSendToClient.size()] = '\0';
+
+                    msg << msgToSend;
+
+                    client->Send(msg);
                     break;
                 }
 
@@ -112,6 +165,8 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                     
 
                     bool usernameFound = false;
+
+                    std::cout << username << std::endl;
 
                     for (auto connection : m_deqConnections)
                     {

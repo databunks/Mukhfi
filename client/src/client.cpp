@@ -15,15 +15,35 @@ enum class CustomMsgTypes : uint32_t
     Login,
     InitiateConversation,
     Register,
+    SendMessageToUser,
+    ReceiveMessageFromUser,
 };
 
 std::string input{};
+std::string currentLoggedInUser;
+std::string currentConverser;
 bool commandMode = true;
+bool conversationMode = false;
+int conversationLineCount = 0;
+int currentConversatorID = 0;
 
 
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
+
+        void SetupConversation(int clientID)
+        {
+            conversationMode = true;
+            // send public key to other client
+
+            // receive public key from other client
+
+            // send a message to the other client
+
+            //SendMessageToServer();
+
+        }
 
         bool StartsWith(const std::string& str, const std::string& prefix)
         {
@@ -99,7 +119,45 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             }
 
     public:
-        std::string currentToken;
+
+        void SendMessageToUser(std::string currentToken, int clientID)
+        {
+            if (currentToken.size() < 1)
+            {
+                printw("You are not logged in!\n");
+                conversationMode = false;
+                return;
+            }
+
+            //move((LINES - 1) - conversationLineCount,0);
+
+            move(LINES - 1, 0);
+
+            std::string fullMsg = currentToken + "¬" + std::to_string(clientID) + "¬" + input;
+
+            char messageToSend[5000];
+
+            for (int i = 0; i < 5000; i++)
+            {
+                messageToSend[i] = NULL;
+            }
+
+            for (int i = 0; i < fullMsg.size(); i++)
+            {
+                messageToSend[i] = fullMsg[i];
+            }
+
+            messageToSend[fullMsg.size()] = '\0';
+
+            olc::net::message<CustomMsgTypes> msg;
+            msg.header.id = CustomMsgTypes::SendMessageToUser;
+
+            msg << messageToSend;
+
+            Send(msg);
+
+
+        }
         
         void PingServer()
         {
@@ -159,6 +217,8 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
             std::string fullMessage;
             fullMessage = username + " " + password;
+
+            currentLoggedInUser = username;
             
             SendMessageToServer(fullMessage, CustomMsgTypes::Login);
             commandMode = true;
@@ -211,7 +271,9 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
             std::string fullMsg;
 
-            fullMsg = currentToken + "!" + username;
+            fullMsg = currentToken + "¬" + username;
+
+            currentConverser = username;
 
             SendMessageToServer(fullMsg, CustomMsgTypes::InitiateConversation);
             commandMode = true;
@@ -264,33 +326,42 @@ int main()
             case KEY_ENTER:
             {
                 c.CaptureInput();
-                if (commandMode)
+
+                if (!conversationMode)
                 {
-                    if (input == "/login")
+                    if (commandMode)
                     {
-                        c.Login();
-                    }
-                    else if (input == "/register")
-                    {
-                        c.Register();
-                    }
-                    else if (c.StartsWith(input, "/talkto"))
-                    {
-                        c.InitiateConversation(currentToken);
-                    }
-                    else if (input == "/ping")
-                    {
-                        c.PingServer();
-                    }
-                    else if (input == "/quit")
-                    {
-                        bQuit = true;
-                    }
-                    else
-                    {
-                        printw("Invalid command!\n");
+                        if (input == "/login")
+                        {
+                            c.Login();
+                        }
+                        else if (input == "/register")
+                        {
+                            c.Register();
+                        }
+                        else if (c.StartsWith(input, "/talkto"))
+                        {
+                            c.InitiateConversation(currentToken);
+                        }
+                        else if (input == "/ping")
+                        {
+                            c.PingServer();
+                        }
+                        else if (input == "/quit")
+                        {
+                            bQuit = true;
+                        }
+                        else
+                        {
+                            printw("Invalid command!\n");
+                        }
                     }
                 }
+                else
+                {
+                    c.SendMessageToUser(currentToken, currentConversatorID);
+                }
+                
                 break;
             }
         }
@@ -362,14 +433,47 @@ int main()
                         char res[200];
                         msg >> res;
 
-                        if (std::stoi(res))
+                        std::string stringMsg(res);
+
+
+                        try
                         {
+                            currentConversatorID = std::stoi(stringMsg);
                             printw("Connected to user with client id: %s", res);
+                            c.SetupConversation(currentConversatorID); 
+                            
                         }
-                        else
+                        catch (const std::exception& e)
                         {
                             printw("Failed to connect to user, are they offline?");
+                            break;
                         }
+
+                        
+
+                        break;
+                    }
+
+                    case CustomMsgTypes::SendMessageToUser:
+                    {
+                        char res[5000];
+                        msg >> res;
+
+                        conversationLineCount++;
+                        move(conversationLineCount, 0);
+                        printw("%s: %s", currentLoggedInUser.c_str(), res);
+                        move(LINES - 1, 0);
+                        break;
+                    }
+
+                    case CustomMsgTypes::ReceiveMessageFromUser:
+                    {
+                        char res[5000];
+                        msg >> res;
+                        conversationLineCount++;
+                        move(conversationLineCount, 0);
+                        printw("%s: %s", currentConverser.c_str(), res);
+                        move(LINES - 1, 0);
                         break;
                     }
                                 
