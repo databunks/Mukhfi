@@ -18,7 +18,7 @@ ${CLIENTPATH}lib/%.o: ${CLIENTPATH}src/%.cpp
 	
 
 client: ${CLIENTPATH}lib/client.o
-	$(CXX) ${CLIENTPATH}lib/client.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${CLIENTPATH}bin/clientOutput -lncurses -lpthread
+	$(CXX) ${CLIENTPATH}lib/client.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o ${CLIENTPATH}bin/clientOutput -lncurses -lpthread -lssl -lcrypto
 
 server: ${SERVERPATH}lib/server.o
 	$(CXX) ${SERVERPATH}lib/server.o -I${CPP_MONGOCXX_PATH}   -I${CPP_BSONCXXX_PATH}  -L${CPP_LOCAL_LIB_PATH} -lmongocxx -lbsoncxx -lpthread -o   ${SERVERPATH}bin/serverOutput -lpthread

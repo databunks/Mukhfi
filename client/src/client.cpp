@@ -1,7 +1,9 @@
 #include <iostream>
 #include <olc_net.h>
 #include <ncurses.h>
-
+#include <openssl/sha.h>
+#include <sstream>
+#include <iomanip>
 
 enum class CustomMsgTypes : uint32_t
 {
@@ -60,13 +62,36 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             while (currentCharInt != KEY_ENTER)
             {
                 currentCharInt = getch();
-                if (currentCharInt == KEY_BACKSPACE)
+
+                switch (currentCharInt)
                 {
-                    CommitBackspace();
+                    case KEY_BACKSPACE:
+                    {
+                        CommitBackspace();
+                        break;
+                    }
                 }
             }
             CaptureInput();
         }
+
+        std::string sha256(const std::string str)
+        {
+            unsigned char hash[SHA256_DIGEST_LENGTH];
+
+            SHA256_CTX sha256;
+            SHA256_Init(&sha256);
+            SHA256_Update(&sha256, str.c_str(), str.size());
+            SHA256_Final(hash, &sha256);
+
+            std::stringstream ss;
+
+            for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+            {
+                ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>( hash[i] );
+            }
+            return ss.str();
+            }
 
     public:
         std::string currentToken;
@@ -122,33 +147,41 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             move(LINES - 1, 0);
             BlockUntilDoneReceivingInput();
             std::string password = input;
+            erase();
+            move(LINES - 1, 0);
+            
+            password = sha256(password);
 
             std::string fullMessage;
             fullMessage = username + " " + password;
             
             SendMessageToServer(fullMessage, CustomMsgTypes::Login);
-            printw("%s", fullMessage.c_str());
             commandMode = true;
         }
 
         void Register()
         {
             commandMode = false;
-            printw("Enter Username:\n");  
-            std::string username; //= getstring();
-            std::cin >> username;
+            move(0,0);
+            erase();
+            printw("Enter Username:\n"); 
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            std::string username = input;
 
+            move(0,0);
+            erase();
             printw("Enter Password:\n");
-            std::string password; //= getstring();
-            std::cin >> password;
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            std::string password = input;
+            erase();
+            move(LINES - 1, 0);
 
-
+            password = sha256(password);
             std::string fullMessage;
             fullMessage = username + " " + password;
-
-            std::cout << fullMessage;
             
-
             SendMessageToServer(fullMessage, CustomMsgTypes::Register);
             commandMode = true;
         }
