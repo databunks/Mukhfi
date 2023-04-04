@@ -301,6 +301,7 @@ class CustomServer : public olc::net::server_interface<CustomMsgTypes>
                 } 
                 else 
                 {
+                    it->second = now;
                     std::cout << "[INFO] Valid token";
                     return true;
                 }
