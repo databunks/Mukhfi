@@ -333,6 +333,20 @@ int main()
                 break;
             }
 
+            case 'q':
+            {
+                if (conversationMode)
+                {
+                    conversationMode = false;
+                    commandMode = true;
+                    echo();
+                }
+                else
+                {
+                    bQuit = true;
+                }
+            }
+
             case KEY_ENTER:
             {
                 c.CaptureInput();
@@ -470,6 +484,13 @@ int main()
                         msg >> res;
 
                         conversationLineCount++;
+
+                        if (conversationLineCount > (LINES - 1))
+                        {
+                            conversationLineCount = 0;
+                            erase();
+                        }
+
                         move(conversationLineCount, 0);
                         attron(COLOR_PAIR(1));
                         printw("%s: ", currentLoggedInUser.c_str());
@@ -483,6 +504,12 @@ int main()
                     {
                         char res[5000];
                         msg >> res;
+
+                        if (conversationLineCount > (LINES - 1))
+                        {
+                            conversationLineCount = 0;
+                            erase();
+                        }
                         conversationLineCount++;
                         attron(COLOR_PAIR(2));
                         move(conversationLineCount, 0);
