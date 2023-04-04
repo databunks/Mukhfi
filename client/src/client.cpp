@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iomanip>
 
+
 enum class CustomMsgTypes : uint32_t
 {
     ServerAccept,
@@ -19,9 +20,14 @@ enum class CustomMsgTypes : uint32_t
     ReceiveMessageFromUser,
 };
 
+
+
+
 std::string input{};
 std::string currentLoggedInUser;
+int currentLoggedInUserPrefixColour = 2;
 std::string currentConverser;
+int currentConversorPrefixColour = 4;
 bool commandMode = true;
 bool conversationMode = false;
 int conversationLineCount = 0;
@@ -33,6 +39,35 @@ int currentConversatorID = 0;
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
     public:
+        std::string GetErrorCodes(int n)
+        {
+
+            switch (n)
+            {
+                case 0:
+                    return "Success";
+                case 1:
+                    return "UsernameLong";
+                case 2:
+                    return "UsernameShort";
+                case 3:
+                    return "UsernameInvalidCharacters";
+                case 4:
+                    return "PasswordLong";
+                case 5:
+                    return "PasswordNotHashed";
+                case 6:
+                    return "UserDoesNotExist";
+                case 7:
+                    return "UserAlreadyExists";
+                case 8:
+                    return "PasswordNoMatchFound";
+                case 9:
+                    return "DatabaseError";
+                default:
+                    return "Unknown";
+            }
+        }
 
         void SetupConversation(int clientID)
         {
@@ -62,6 +97,65 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             if (x > 0)
             move(y, x - 1);
         }
+
+        void PrintColours()
+        {
+            move(1,0);
+            printw("1. Red");
+            move(2,0);
+            printw("2. Green");
+            move(3,0);
+            printw("3. Yellow");
+            move(4,0);
+            printw("4. White");
+            move(5,0);
+            printw("5. Cyan");
+            move(6,0);
+            printw("6. Magenta");
+        }
+
+        void CaptureColour()
+        {
+            commandMode = false;
+            erase();
+            move(0,0);
+            printw("Enter a colour for your username prefix: ");
+            PrintColours();
+
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+
+            try
+            {
+                currentLoggedInUserPrefixColour = std::atoi(input.c_str());
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+
+            erase();
+            move(0,0);
+            printw("Enter a colour for your conversers prefix: ");
+            PrintColours();
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            
+            try
+            {
+                currentConversorPrefixColour = std::atoi(input.c_str());
+            }
+            catch(const std::exception& e)
+            {
+                std::cerr << e.what() << '\n';
+            }
+            erase();
+            printw("Finished setting colours!\n");
+            
+
+            commandMode = true;
+        }
+
         void CaptureInput()
         {
             input = "";
@@ -316,7 +410,8 @@ int main()
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
     init_pair(3, COLOR_YELLOW, COLOR_BLACK);
     init_pair(4, COLOR_WHITE, COLOR_BLACK);
-
+    init_pair(5, COLOR_CYAN, COLOR_BLACK);
+    init_pair(6, COLOR_MAGENTA, COLOR_BLACK);
 
     while (!bQuit)
     {
@@ -355,7 +450,28 @@ int main()
                 {
                     if (commandMode)
                     {
-                        if (input == "/login")
+                        if (input == "/help")
+                        {
+                            erase();
+                            move(0,0);
+                            printw("/help - shows this menu\n");
+                            move(1,0);
+                            printw("/login - logs you in\n");
+                            move(2,0);
+                            printw("/register - registers your account\n");
+                            move(3,0);
+                            printw("/talkto - starts a conversation with a user (press q to quit conversation)\n");
+                            move(4,0);
+                            printw("/ping - pings the server\n");
+                            move(5,0);
+                            printw("/choosecolour - changes the colour of your username");
+                            move(6,0);
+                            printw("/quit - quits the program (or press q)\n");
+                            move(7,0);
+
+                            move(LINES - 1, 0);
+                        }
+                        else if (input == "/login")
                         {
                             c.Login();
                         }
@@ -363,7 +479,11 @@ int main()
                         {
                             c.Register();
                         }
-                        else if (c.StartsWith(input, "/talkto"))
+                        else if (input == "/choosecolour")
+                        {
+                            c.CaptureColour();
+                        }
+                        else if (input == "/talkto")
                         {
                             c.InitiateConversation(currentToken);
                         }
@@ -377,7 +497,7 @@ int main()
                         }
                         else
                         {
-                            printw("Invalid command!\n");
+                            printw("Invalid command! type /help for a list of commands\n");
                         }
                     }
                 }
@@ -492,7 +612,7 @@ int main()
                         }
 
                         move(conversationLineCount, 0);
-                        attron(COLOR_PAIR(1));
+                        attron(COLOR_PAIR(currentLoggedInUserPrefixColour));
                         printw("%s: ", currentLoggedInUser.c_str());
                         attron(COLOR_PAIR(4));
                         printw("%s", res);
@@ -502,21 +622,25 @@ int main()
 
                     case CustomMsgTypes::ReceiveMessageFromUser:
                     {
-                        char res[5000];
-                        msg >> res;
-
-                        if (conversationLineCount > (LINES - 1))
+                        if (conversationMode)
                         {
-                            conversationLineCount = 0;
-                            erase();
+                            char res[5000];
+                            msg >> res;
+
+                            if (conversationLineCount > (LINES - 1))
+                            {
+                                conversationLineCount = 0;
+                                erase();
+                            }
+                            conversationLineCount++;
+                            attron(COLOR_PAIR(currentConversorPrefixColour));
+                            move(conversationLineCount, 0);
+                            printw("%s: ", currentConverser.c_str());
+                            attron(COLOR_PAIR(4));
+                            printw("%s", res);
+                            move(LINES - 1, 0);
                         }
-                        conversationLineCount++;
-                        attron(COLOR_PAIR(2));
-                        move(conversationLineCount, 0);
-                        printw("%s: ", currentConverser.c_str());
-                        attron(COLOR_PAIR(4));
-                        printw("%s", res);
-                        move(LINES - 1, 0);
+                        
                         break;
                     }
                                 
