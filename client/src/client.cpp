@@ -15,38 +15,58 @@ enum class CustomMsgTypes : uint32_t
     Register,
 };
 
+std::string input{};
+bool commandMode = true;
+
+
 class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 {
+    public:
+
+        void CommitBackspace()
+        {
+            printw(" ");
+
+            int y, x;
+            getyx(stdscr, y, x);
+
+            if (x > 0)
+            move(y, x - 1);
+        }
+        void CaptureInput()
+        {
+            input = "";
+
+                int y, x;
+                getyx(stdscr, y, x);
+
+                char currentChar;
+
+                for (int i = 0; i < x; i++)
+                {
+                    move(y, i);
+                    currentChar = inch();
+                    input += currentChar;
+                }
+
+                move(LINES - 1, 0);
+                clrtoeol();
+        }
+
     private:
-
-    std::string getstring()
-    {
-        int currentPressedChar = getch();
-
-        while (currentPressedChar != '\n' )
+        void BlockUntilDoneReceivingInput()
         {
-            currentPressedChar = getch();
+            int currentCharInt = getch();
+            while (currentCharInt != KEY_ENTER)
+            {
+                currentCharInt = getch();
+                if (currentCharInt == KEY_BACKSPACE)
+                {
+                    CommitBackspace();
+                }
+            }
+            CaptureInput();
         }
-
-        move(LINES - 1, 0);
-        int y, x;
-        getyx(stdscr, y, x);
-
-        std::string input{};
-
-        for (int i = 0; i < x; i++)
-        {
-            move(y, i);
-            char currentChar = inch();
-            input += currentChar;
-        }
-
-        printw("This: %s", input.c_str());
-        move(LINES - 1, 0);
-        clrtoeol();
-
-        return input;
-    }
 
     public:
         std::string currentToken;
@@ -88,24 +108,32 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
 
         void Login()
         {
-            printw("Enter Username:\n");  
-            std::string username = getstring();
-            //std::cin >> username;
+            commandMode = false;
+            move(0,0);
+            erase();
+            printw("Enter Username:\n"); 
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            std::string username = input;
 
+            move(0,0);
+            erase();
             printw("Enter Password:\n");
-            std::string password; // = getstring();
-            //std::cin >> password;
-
+            move(LINES - 1, 0);
+            BlockUntilDoneReceivingInput();
+            std::string password = input;
 
             std::string fullMessage;
             fullMessage = username + " " + password;
             
-
             SendMessageToServer(fullMessage, CustomMsgTypes::Login);
+            printw("%s", fullMessage.c_str());
+            commandMode = true;
         }
 
         void Register()
         {
+            commandMode = false;
             printw("Enter Username:\n");  
             std::string username; //= getstring();
             std::cin >> username;
@@ -122,6 +150,7 @@ class CustomClient : public olc::net::client_interface<CustomMsgTypes>
             
 
             SendMessageToServer(fullMessage, CustomMsgTypes::Register);
+            commandMode = true;
         }
 
         void InitiateConversation(std::string currentToken)
@@ -182,37 +211,42 @@ int main()
             
             case KEY_BACKSPACE:
             {
-                printw(" ");
-
-                int y, x;
-                getyx(stdscr, y, x);
-
-                if (x > 0)
-                move(y, x - 1);
+                c.CommitBackspace();
 
                 break;
             }
 
-            case '\n':
+            case KEY_ENTER:
             {
-                move(LINES - 1, 0);
-
-                int y, x;
-                getyx(stdscr, y, x);
-
-                std::string input{};
-
-                for (int i = 0; i < x; i++)
+                c.CaptureInput();
+                if (commandMode)
                 {
-                    move(y, i);
-                    char currentChar = inch();
-                    input += currentChar;
+                    if (input == "login")
+                    {
+                        c.Login();
+                    }
+                    else if (input == "register")
+                    {
+                        c.Register();
+                    }
+                    else if (input == "initiate")
+                    {
+                        c.InitiateConversation(c.currentToken);
+                    }
+                    else if (input == "ping")
+                    {
+                        c.PingServer();
+                    }
+                    else if (input == "quit")
+                    {
+                        bQuit = true;
+                    }
+                    else
+                    {
+                        printw("Invalid command!\n");
+                    }
                 }
-
-                move(LINES - 1, 0);
-                clrtoeol();
-
-                printw("This: %s", input.c_str());
+                break;
             }
         }
 
