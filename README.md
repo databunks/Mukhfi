@@ -1,4 +1,4 @@
-# Mukhfi مخفي
+# Mukhfi
 An encrypted and anonymized messaging app designed for linux desktops
 
 # Dependencies:
