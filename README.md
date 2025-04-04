@@ -1,5 +1,5 @@
 # Mukhfi
-An encrypted and anonymized messaging app designed for linux desktops
+A messaging application written in C++ designed for linux desktops
 
 # Dependencies:
 Crypto++ <br />
